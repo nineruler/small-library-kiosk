@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- 외장 USB 웹캠을 고르려면 CameraSelector.LENS_FACING_EXTERNAL 이 필요하다.
+         아직 실험 API라 프로젝트 전체에서 명시적으로 opt-in 한다. -->
+    <issue id="UnsafeOptInUsageError">
+        <option name="opt-in" value="androidx.camera.core.ExperimentalLensFacing" />
+    </issue>
+</lint>

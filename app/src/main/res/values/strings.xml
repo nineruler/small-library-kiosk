@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">자이아람터 키오스크</string>
+    <string name="library_name">자이아람터 작은도서관</string>
+
+    <!-- 홈 -->
+    <string name="home_greeting">무엇을 도와드릴까요?</string>
+    <string name="home_hint">화면의 큰 버튼을 눌러 주세요</string>
+    <string name="action_borrow">대출하기</string>
+    <string name="action_borrow_desc">회원증과 책을 차례로 보여 주세요</string>
+    <string name="action_return">반납하기</string>
+    <string name="action_return_desc">반납할 책을 보여 주세요</string>
+
+    <!-- 공통 -->
+    <string name="button_back">이전</string>
+    <string name="button_home">처음으로</string>
+    <string name="button_next">다음</string>
+    <string name="button_done">다 했어요</string>
+    <string name="button_remove">빼기</string>
+    <string name="processing">처리하고 있어요…</string>
+    <string name="auto_home_in">%1$d초 후 처음 화면으로 돌아갑니다</string>
+
+    <!-- 카메라 -->
+    <string name="camera_permission_title">카메라 권한이 필요해요</string>
+    <string name="camera_permission_body">바코드를 읽으려면 카메라 사용을 허용해 주세요.</string>
+    <string name="camera_permission_grant">권한 허용하기</string>
+    <string name="camera_error">카메라를 열 수 없습니다. 웹캠 연결을 확인해 주세요.</string>
+
+    <!-- 회원 인증 -->
+    <string name="member_scan_title">회원증 바코드를 보여 주세요</string>
+    <string name="member_scan_hint">회원증을 카메라 앞 네모 칸에 맞춰 주세요</string>
+    <string name="member_manual_entry">회원번호 직접 입력</string>
+    <string name="member_number_label">회원번호</string>
+    <string name="member_welcome">%1$s 님, 안녕하세요!</string>
+    <string name="member_loan_status">현재 대출 %1$d권 · 더 빌릴 수 있는 책 %2$d권</string>
+
+    <!-- 도서 스캔 -->
+    <string name="borrow_scan_title">빌릴 책의 바코드를 보여 주세요</string>
+    <string name="return_scan_title">반납할 책의 바코드를 보여 주세요</string>
+    <string name="scan_hint_multiple">여러 권을 이어서 찍을 수 있어요</string>
+    <string name="scanned_list_title">찍은 책 (%1$d권)</string>
+    <string name="scanned_list_empty">아직 찍은 책이 없어요</string>
+
+    <!-- 결과 -->
+    <string name="result_borrow_title">대출이 끝났어요</string>
+    <string name="result_return_title">반납이 끝났어요</string>
+    <string name="result_due_date">반납 예정일: %1$s</string>
+    <string name="result_success_count">성공 %1$d권</string>
+    <string name="result_failure_count">실패 %1$d권</string>
+    <string name="result_returned_ok">반납 완료</string>
+    <string name="result_overdue">%1$d일 연체되었어요</string>
+    <string name="result_failure_hint">실패한 책은 사서에게 보여 주세요</string>
+
+    <!-- 오류 메시지 -->
+    <string name="error_unknown_member">등록되지 않은 회원증입니다</string>
+    <string name="error_member_suspended">대출이 정지된 회원입니다. 사서에게 문의해 주세요</string>
+    <string name="error_unknown_item">도서관에 등록되지 않은 책입니다</string>
+    <string name="error_already_loaned">이미 다른 분이 대출 중인 책입니다</string>
+    <string name="error_not_loaned">대출 기록이 없는 책입니다</string>
+    <string name="error_limit_exceeded">대출 가능 권수를 넘었습니다</string>
+    <string name="error_duplicate_scan">이미 찍은 책이에요</string>
+    <string name="error_network">코라시스에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요</string>
+    <string name="error_generic">처리 중 문제가 생겼습니다</string>
+</resources>

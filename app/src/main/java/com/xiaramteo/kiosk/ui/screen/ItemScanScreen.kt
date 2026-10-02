@@ -1,0 +1,172 @@
+package com.xiaramteo.kiosk.ui.screen
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.xiaramteo.kiosk.R
+import com.xiaramteo.kiosk.data.BookItem
+import com.xiaramteo.kiosk.ui.KioskMode
+import com.xiaramteo.kiosk.ui.KioskUiState
+import com.xiaramteo.kiosk.ui.messageRes
+
+@Composable
+fun ItemScanScreen(
+    state: KioskUiState.ItemScan,
+    onBarcode: (String) -> Unit,
+    onRemove: (BookItem) -> Unit,
+    onSubmit: () -> Unit,
+    onBack: () -> Unit,
+    onHome: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val titleRes = when (state.mode) {
+        KioskMode.BORROW -> R.string.borrow_scan_title
+        KioskMode.RETURN -> R.string.return_scan_title
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        KioskTopBar(title = stringResource(titleRes), onBack = onBack, onHome = onHome)
+
+        state.member?.let { member ->
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                ),
+            ) {
+                Column(Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+                    Text(
+                        stringResource(R.string.member_welcome, member.name),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        stringResource(
+                            R.string.member_loan_status,
+                            member.loanCount,
+                            member.remainingLoans,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        ScanPane(
+            hint = stringResource(R.string.scan_hint_multiple),
+            onBarcode = onBarcode,
+            busy = state.busy,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1.1f)
+                .padding(horizontal = 24.dp),
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+        ) {
+            AnimatedVisibility(visible = state.error != null) {
+                Column {
+                    ErrorBanner(stringResource(state.error?.messageRes() ?: R.string.error_generic))
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+            Text(
+                stringResource(R.string.scanned_list_title, state.scanned.size),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Spacer(Modifier.height(8.dp))
+            ScannedList(
+                items = state.scanned,
+                onRemove = onRemove,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            )
+        }
+
+        BigButton(
+            text = stringResource(R.string.button_done),
+            onClick = onSubmit,
+            enabled = state.scanned.isNotEmpty() && !state.busy,
+            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+        )
+    }
+}
+
+@Composable
+private fun ScannedList(
+    items: List<BookItem>,
+    onRemove: (BookItem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (items.isEmpty()) {
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                stringResource(R.string.scanned_list_empty),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
+
+    val listState = rememberLazyListState()
+    // 새로 찍은 책이 목록 아래에 묻히지 않도록 끝으로 따라 내려간다.
+    LaunchedEffect(items.size) {
+        if (items.isNotEmpty()) listState.animateScrollToItem(items.lastIndex)
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(items, key = { it.barcode }) { item ->
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(item.title, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "${item.author} · ${item.callNumber}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(onClick = { onRemove(item) }) {
+                        Text(stringResource(R.string.button_remove))
+                    }
+                }
+            }
+        }
+    }
+}
