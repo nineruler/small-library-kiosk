@@ -42,6 +42,12 @@ android {
     lint {
         lintConfig = file("lint.xml")
     }
+    testOptions {
+        unitTests {
+            // android.util.Log 같은 스텁 호출이 예외를 던지지 않고 기본값을 돌려주게 한다.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -60,6 +66,7 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.uvc.android)
 
     implementation(libs.androidx.core.ktx)
 

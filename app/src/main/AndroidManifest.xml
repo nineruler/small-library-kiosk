@@ -4,6 +4,14 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- UVCAndroid 가 선언하는 권한 중 이 키오스크에 필요 없는 것은 병합에서 뺀다. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" tools:replace="android:required" />
+
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <uses-feature android:name="android.hardware.camera.external" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />

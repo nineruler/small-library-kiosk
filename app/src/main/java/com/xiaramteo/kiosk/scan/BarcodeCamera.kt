@@ -47,11 +47,12 @@ fun BarcodeCamera(
         }
     }
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
-    val analyzer = remember { BarcodeAnalyzer { value -> currentOnBarcode(value) } }
+    val decoder = remember { BarcodeDecoder { value -> currentOnBarcode(value) } }
+    val analyzer = remember { BarcodeAnalyzer(decoder) }
 
     DisposableEffect(Unit) {
         onDispose {
-            analyzer.close()
+            decoder.close()
             analysisExecutor.shutdown()
         }
     }

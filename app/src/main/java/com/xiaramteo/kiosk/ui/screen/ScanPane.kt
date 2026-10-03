@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.xiaramteo.kiosk.R
 import com.xiaramteo.kiosk.scan.BarcodeCamera
+import com.xiaramteo.kiosk.scan.UvcBarcodeCamera
+import com.xiaramteo.kiosk.scan.findUvcDevice
 import com.xiaramteo.kiosk.scan.hasCameraPermission
 
 /**
@@ -48,7 +50,9 @@ fun ScanPane(
     busy: Boolean = false,
 ) {
     val context = LocalContext.current
-    var granted by remember { mutableStateOf(hasCameraPermission(context)) }
+    // USB 웹캠이 꽂혀 있으면 그쪽을 쓴다. 웹캠은 libuvc 가 직접 다루므로 CAMERA 권한이 필요 없다.
+    val useUvc = remember { findUvcDevice(context) != null }
+    var granted by remember { mutableStateOf(useUvc || hasCameraPermission(context)) }
     var cameraError by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -68,11 +72,19 @@ fun ScanPane(
             !granted -> PermissionNotice(onRequest = { launcher.launch(Manifest.permission.CAMERA) })
             cameraError -> CenteredNotice(stringResource(R.string.camera_error))
             else -> {
-                BarcodeCamera(
-                    onBarcode = onBarcode,
-                    onError = { cameraError = true },
-                    modifier = Modifier.fillMaxSize(),
-                )
+                if (useUvc) {
+                    UvcBarcodeCamera(
+                        onBarcode = onBarcode,
+                        onError = { cameraError = true },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    BarcodeCamera(
+                        onBarcode = onBarcode,
+                        onError = { cameraError = true },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
                 // 바코드를 맞출 자리를 눈으로 알려주는 가이드 테두리.
                 Box(
                     modifier = Modifier

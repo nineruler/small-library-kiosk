@@ -43,11 +43,26 @@
 | 9791196769321 | 아기 돼지 삼형제 | 서가 |
 | 9788937473135 | 데미안 | 김하늘 대출 중 (3일 연체) |
 
-## 카메라
+## 바코드 입력 경로 세 가지
 
-`scan/CameraSelectors.kt`가 **외장 웹캠 → 후면 → 전면** 순으로 카메라를 고른다.
-웹캠이 빠져 있거나 개발용 에뮬레이터에서도 그대로 돌아간다.
-인식 포맷은 EAN-13/8, CODE-128/39, CODABAR, ITF, QR (`scan/BarcodeAnalyzer.kt`).
+바코드는 어느 경로로 들어오든 `onBarcode: (String) -> Unit` 하나로 모인다.
+
+1. **HID 바코드 리더기 (권장)** — `scan/HidScannerReader.kt`.
+   리더기가 외장 키보드로 잡혀 문자를 빠르게 보내고 Enter 로 끝내는 동작을 모은다.
+   `MainActivity.dispatchKeyEvent` 에서 받으므로 어느 화면에서나 스캔된다.
+2. **USB 웹캠 (UVC)** — `scan/UvcBarcodeCamera.kt`.
+   Lenovo TB128XU 는 커널에 uvcvideo 가 없어 camera2 가 외장 카메라를 노출하지 않는다.
+   UVCAndroid(libusb/libuvc)가 usbfs 로 직접 열고, NV21 프레임을 ML Kit 에 넘긴다.
+3. **내장 카메라 (CameraX)** — `scan/BarcodeCamera.kt`. 웹캠이 없으면 자동으로 이쪽을 쓴다.
+
+인식 포맷은 EAN-13/8, CODE-128/39, CODABAR, ITF, QR (`scan/BarcodeDecoder.kt`).
+
+### 실기기 측정 결과 (2026-10-04, Lenovo TB128XU + ABKO APC900 웹캠)
+
+- HID 리더기 경로: 정상. 전체 대출 흐름 확인 완료
+- UVC 웹캠 경로: 미리보기와 프레임 수신(1920x1080 MJPEG 30fps)은 정상이나,
+  **ABKO APC900 은 고정 초점에 포커스/줌 제어를 노출하지 않아** 책 라벨 바코드를
+  해상하지 못한다. 막대 경계가 번져 디코딩 불가. 카메라 교체 없이는 해결되지 않는다.
 
 ## 키오스크 모드
 
