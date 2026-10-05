@@ -26,17 +26,18 @@
     <string name="camera_error">카메라를 열 수 없습니다. 웹캠 연결을 확인해 주세요.</string>
 
     <!-- 회원 인증 -->
-    <string name="member_scan_title">회원증 바코드를 보여 주세요</string>
-    <string name="member_scan_hint">회원증을 카메라 앞 네모 칸에 맞춰 주세요</string>
+    <string name="member_scan_title">회원증을 찍어 주세요</string>
+    <string name="member_scan_hint">회원증을 리더기나 카메라에 대 주세요</string>
     <string name="member_manual_entry">회원번호 직접 입력</string>
     <string name="member_number_label">회원번호</string>
     <string name="member_welcome">%1$s 님, 안녕하세요!</string>
     <string name="member_loan_status">현재 대출 %1$d권 · 더 빌릴 수 있는 책 %2$d권</string>
 
     <!-- 도서 스캔 -->
-    <string name="borrow_scan_title">빌릴 책의 바코드를 보여 주세요</string>
-    <string name="return_scan_title">반납할 책의 바코드를 보여 주세요</string>
-    <string name="scan_hint_multiple">여러 권을 이어서 찍을 수 있어요</string>
+    <string name="borrow_scan_title">빌릴 책을 찍어 주세요</string>
+    <string name="return_scan_title">반납할 책을 찍어 주세요</string>
+    <string name="scan_hint_multiple">책 바코드를 리더기나 카메라에 대 주세요</string>
+    <string name="scan_hint_multiple_sub">여러 권을 이어서 찍을 수 있어요</string>
     <string name="scanned_list_title">찍은 책 (%1$d권)</string>
     <string name="scanned_list_empty">아직 찍은 책이 없어요</string>
 

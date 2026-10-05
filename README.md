@@ -55,13 +55,16 @@
    Lenovo TB128XU 는 커널에 uvcvideo 가 없어 camera2 가 외장 카메라를 노출하지 않는다.
    UVCAndroid(libusb/libuvc)가 usbfs 로 직접 열고, NV21 프레임을 ML Kit 에 넘긴다.
 3. **내장 카메라 (CameraX)** — `scan/BarcodeCamera.kt`. 웹캠이 없으면 자동으로 이쪽을 쓴다.
+   렌즈는 **외장 웹캠 → 전면 → 후면** 순으로 고른다(`scan/CameraSelectors.kt`).
+   태블릿을 세워 두면 후면 카메라는 거치대 뒤쪽을 비추게 되므로 전면을 앞세운다.
 
 인식 포맷은 EAN-13/8, CODE-128/39, CODABAR, ITF, QR (`scan/BarcodeDecoder.kt`).
 
 ### 실기기 측정 결과 (2026-10-04, Lenovo TB128XU + ABKO APC900 웹캠)
 
 - HID 리더기 경로: 정상. 실물 리더기(TMS HIDKeyBoard)로 회원증·장서 라벨 스캔 확인 완료.
-  실제 장서 라벨은 "EM" + 10자리(CODE-128) 형식이다
+  실제 장서 라벨은 "EM" + 10자리(CODE-128) 형식이다.
+  리더기는 HID 인터페이스(class 03)만 노출하므로 영상 미리보기는 제공하지 않는다
 - UVC 웹캠 경로: 미리보기와 프레임 수신(1920x1080 MJPEG 30fps)은 정상이나,
   **ABKO APC900 은 고정 초점에 포커스/줌 제어를 노출하지 않아** 책 라벨 바코드를
   해상하지 못한다. 막대 경계가 번져 디코딩 불가. 카메라 교체 없이는 해결되지 않는다.
