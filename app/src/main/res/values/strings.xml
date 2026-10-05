@@ -36,7 +36,7 @@
     <!-- 도서 스캔 -->
     <string name="borrow_scan_title">빌릴 책을 찍어 주세요</string>
     <string name="return_scan_title">반납할 책을 찍어 주세요</string>
-    <string name="scan_hint_multiple">책 바코드를 리더기나 카메라에 대 주세요</string>
+    <string name="scan_hint_multiple">책 뒤쪽 바코드를 리더기에 대 주세요</string>
     <string name="scan_hint_multiple_sub">여러 권을 이어서 찍을 수 있어요</string>
     <string name="scanned_list_title">찍은 책 (%1$d권)</string>
     <string name="scanned_list_empty">아직 찍은 책이 없어요</string>

@@ -19,7 +19,7 @@ class MockLibrarySystem(
     private val mutex = Mutex()
 
     private val members = mutableMapOf(
-        "1000000001" to Member("M001", "1000000001", "김하늘", loanCount = 1, loanLimit = 5),
+        "1000000001" to Member("M001", "1000000001", "구하린", loanCount = 1, loanLimit = 5),
         "1000000002" to Member("M002", "1000000002", "박도윤", loanCount = 5, loanLimit = 5),
         "1000000003" to Member("M003", "1000000003", "이서아", loanCount = 0, loanLimit = 5, suspended = true),
     )

@@ -33,7 +33,6 @@ import com.xiaramteo.kiosk.ui.messageRes
 @Composable
 fun ItemScanScreen(
     state: KioskUiState.ItemScan,
-    onBarcode: (String) -> Unit,
     onRemove: (BookItem) -> Unit,
     onSubmit: () -> Unit,
     onBack: () -> Unit,
@@ -73,20 +72,21 @@ fun ItemScanScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        ScanPane(
+        // 책 등록 라벨은 카메라로 해상되지 않아(막대가 촘촘함) 이 단계는 리더기 전용이다.
+        ScannerPanel(
             hint = stringResource(R.string.scan_hint_multiple),
-            onBarcode = onBarcode,
+            subHint = stringResource(R.string.scan_hint_multiple_sub),
             busy = state.busy,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.1f)
+                .weight(0.8f)
                 .padding(horizontal = 24.dp),
         )
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1.2f)
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             AnimatedVisibility(visible = state.error != null) {

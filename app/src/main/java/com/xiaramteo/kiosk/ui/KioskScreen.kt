@@ -42,7 +42,6 @@ fun KioskScreen(viewModel: KioskViewModel, modifier: Modifier = Modifier) {
 
                 is KioskUiState.ItemScan -> ItemScanScreen(
                     state = current,
-                    onBarcode = viewModel::onBarcode,
                     onRemove = viewModel::removeScanned,
                     onSubmit = viewModel::submit,
                     onBack = viewModel::goBack,

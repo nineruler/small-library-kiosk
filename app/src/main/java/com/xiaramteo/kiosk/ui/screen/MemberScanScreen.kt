@@ -1,6 +1,7 @@
 package com.xiaramteo.kiosk.ui.screen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,18 +48,20 @@ fun MemberScanScreen(
             onHome = onHome,
         )
 
+        // 도서 스캔 화면과 같은 1.1 : 1 비율로 둬서 두 화면의 프리뷰 크기를 맞춘다.
         ScanPane(
             hint = stringResource(R.string.member_scan_hint),
             onBarcode = onBarcode,
             busy = state.busy,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1.1f)
                 .padding(horizontal = 24.dp),
         )
 
         Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(24.dp),
+            verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             AnimatedVisibility(visible = state.error != null) {
@@ -67,6 +70,7 @@ fun MemberScanScreen(
                     Spacer(Modifier.height(20.dp))
                 }
             }
+            Spacer(Modifier.weight(1f))
             if (manualEntry) {
                 OutlinedTextField(
                     value = memberNumber,

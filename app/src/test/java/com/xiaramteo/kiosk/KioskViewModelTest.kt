@@ -45,7 +45,7 @@ class KioskViewModelTest {
 
         val scanState = vm.state.value as KioskUiState.ItemScan
         assertEquals(KioskMode.BORROW, scanState.mode)
-        assertEquals("김하늘", scanState.member?.name)
+        assertEquals("구하린", scanState.member?.name)
 
         vm.onBarcode("9788936434120")
         advanceUntilIdle()

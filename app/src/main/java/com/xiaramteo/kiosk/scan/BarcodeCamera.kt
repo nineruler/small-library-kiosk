@@ -20,6 +20,7 @@ import androidx.camera.core.CameraSelector
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -49,9 +50,14 @@ fun BarcodeCamera(
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val decoder = remember { BarcodeDecoder { value -> currentOnBarcode(value) } }
     val analyzer = remember { BarcodeAnalyzer(decoder) }
+    // 화면을 떠날 때 카메라를 반드시 놓아주려고 바인딩한 provider 를 들고 있는다.
+    // bindToLifecycle 은 Activity 생명주기에 묶이므로, 이 컴포저블이 사라져도
+    // 직접 unbind 하지 않으면 카메라가 계속 열린 채로 남는다.
+    val boundProvider = remember { AtomicReference<ProcessCameraProvider?>(null) }
 
     DisposableEffect(Unit) {
         onDispose {
+            boundProvider.getAndSet(null)?.unbindAll()
             decoder.close()
             analysisExecutor.shutdown()
         }
@@ -86,6 +92,7 @@ fun BarcodeCamera(
         runCatching {
             provider.unbindAll()
             provider.bindToLifecycle(lifecycleOwner, selector, preview, analysis)
+            boundProvider.set(provider)
         }.onFailure(currentOnError)
     }
 
