@@ -138,6 +138,19 @@ class KioskViewModelTest {
     }
 
     @Test
+    fun `실제 자이아람터 장서 라벨도 조회된다`() = runTest(dispatcher) {
+        val vm = viewModel()
+        vm.startBorrow()
+        vm.onBarcode("1000000001")
+        advanceUntilIdle()
+        vm.onBarcode("EM0000000263")
+        advanceUntilIdle()
+
+        val state = vm.state.value as KioskUiState.ItemScan
+        assertEquals("어두워지면 일어나라", state.scanned.single().title)
+    }
+
+    @Test
     fun `목록에서 책을 뺄 수 있다`() = runTest(dispatcher) {
         val vm = viewModel()
         vm.startReturn()
