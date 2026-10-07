@@ -63,12 +63,13 @@ class MockLibrarySystem(
             when {
                 current.suspended -> ItemResult.Failed(item, KioskError.MEMBER_SUSPENDED)
                 loans.containsKey(item.barcode) -> ItemResult.Failed(item, KioskError.ALREADY_LOANED)
-                current.remainingLoans <= 0 -> ItemResult.Failed(item, KioskError.LIMIT_EXCEEDED)
+                (current.remainingLoans ?: Int.MAX_VALUE) <= 0 ->
+                    ItemResult.Failed(item, KioskError.LIMIT_EXCEEDED)
                 else -> {
                     loans[item.barcode] = current.memberId
                     val due = LocalDate.now().plusDays(loanPeriodDays)
                     dueDates[item.barcode] = due
-                    members[current.barcode] = current.copy(loanCount = current.loanCount + 1)
+                    members[current.barcode] = current.copy(loanCount = (current.loanCount ?: 0) + 1)
                     ItemResult.Borrowed(item, due)
                 }
             }
@@ -82,7 +83,7 @@ class MockLibrarySystem(
                 ?: return@withLock ItemResult.Failed(item, KioskError.NOT_LOANED)
             val due = dueDates.remove(item.barcode)
             members.entries.firstOrNull { it.value.memberId == borrowerId }?.let { (key, borrower) ->
-                members[key] = borrower.copy(loanCount = (borrower.loanCount - 1).coerceAtLeast(0))
+                members[key] = borrower.copy(loanCount = ((borrower.loanCount ?: 0) - 1).coerceAtLeast(0))
             }
             val overdue = due?.let { java.time.temporal.ChronoUnit.DAYS.between(it, LocalDate.now()) } ?: 0
             ItemResult.Returned(item, overdue.coerceAtLeast(0).toInt())

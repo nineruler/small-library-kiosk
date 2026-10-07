@@ -141,7 +141,7 @@ private fun ResultRow(result: ItemResult) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(result.item.title, style = MaterialTheme.typography.titleMedium)
+            Text(result.item.displayTitle, style = MaterialTheme.typography.titleMedium)
             val detail = when (result) {
                 is ItemResult.Borrowed ->
                     stringResource(R.string.result_due_date, result.dueDate.format(DueDateFormat))

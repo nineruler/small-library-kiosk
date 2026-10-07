@@ -31,6 +31,8 @@
     <string name="member_manual_entry">회원번호 직접 입력</string>
     <string name="member_number_label">회원번호</string>
     <string name="member_welcome">%1$s 님, 안녕하세요!</string>
+    <string name="member_welcome_number">회원번호 %1$s</string>
+    <string name="member_verified">확인되었습니다</string>
     <string name="member_loan_status">현재 대출 %1$d권 · 더 빌릴 수 있는 책 %2$d권</string>
 
     <!-- 도서 스캔 -->

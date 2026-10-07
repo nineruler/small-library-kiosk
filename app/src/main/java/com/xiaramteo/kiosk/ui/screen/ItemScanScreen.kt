@@ -55,16 +55,20 @@ fun ItemScanScreen(
                 ),
             ) {
                 Column(Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+                    // 장서·회원 목록이 없으면 이름을 모르므로 회원번호로 대신 부른다.
                     Text(
-                        stringResource(R.string.member_welcome, member.name),
+                        text = member.name
+                            ?.let { stringResource(R.string.member_welcome, it) }
+                            ?: stringResource(R.string.member_welcome_number, member.barcode),
                         style = MaterialTheme.typography.titleLarge,
                     )
+                    val remaining = member.remainingLoans
                     Text(
-                        stringResource(
-                            R.string.member_loan_status,
-                            member.loanCount,
-                            member.remainingLoans,
-                        ),
+                        text = if (member.loanCount != null && remaining != null) {
+                            stringResource(R.string.member_loan_status, member.loanCount, remaining)
+                        } else {
+                            stringResource(R.string.member_verified)
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -155,12 +159,14 @@ private fun ScannedList(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(item.title, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "${item.author} · ${item.callNumber}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Text(item.displayTitle, style = MaterialTheme.typography.titleMedium)
+                        item.displaySubtitle?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     TextButton(onClick = { onRemove(item) }) {
                         Text(stringResource(R.string.button_remove))
