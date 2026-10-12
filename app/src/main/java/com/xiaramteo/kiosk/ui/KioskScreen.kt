@@ -18,7 +18,11 @@ import com.xiaramteo.kiosk.ui.screen.SubmittingScreen
 
 /** 상태 하나로 화면을 고르는 단일 진입점. 별도의 내비게이션 그래프를 두지 않는다. */
 @Composable
-fun KioskScreen(viewModel: KioskViewModel, modifier: Modifier = Modifier) {
+fun KioskScreen(
+    viewModel: KioskViewModel,
+    modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val secondsUntilHome by viewModel.secondsUntilHome.collectAsStateWithLifecycle()
 
@@ -32,6 +36,7 @@ fun KioskScreen(viewModel: KioskViewModel, modifier: Modifier = Modifier) {
                 KioskUiState.Home -> HomeScreen(
                     onBorrow = viewModel::startBorrow,
                     onReturn = viewModel::startReturn,
+                    onOpenSettings = onOpenSettings,
                 )
 
                 is KioskUiState.MemberScan -> MemberScanScreen(

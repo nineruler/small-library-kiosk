@@ -47,6 +47,14 @@
             </intent-filter>
             -->
         </activity>
+
+        <!-- 사서용. 런처에 노출하지 않고 홈 화면의 숨은 동작으로만 연다. -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity,DiscouragedApi" />
     </application>
 
 </manifest>

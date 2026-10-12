@@ -1,5 +1,7 @@
 package com.xiaramteo.kiosk.ui.screen
 
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,16 +39,24 @@ fun HomeScreen(
     onBorrow: () -> Unit,
     onReturn: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(24.dp))
+        // 사서 설정으로 가는 숨은 입구. 이용자가 실수로 누르지 않도록 길게 누르기로 둔다.
         Text(
             text = stringResource(R.string.library_name),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.combinedClickable(
+                onClick = {},
+                onLongClick = onOpenSettings,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+            ),
         )
         Spacer(Modifier.height(12.dp))
         Text(

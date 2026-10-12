@@ -1,6 +1,7 @@
 package com.xiaramteo.kiosk
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -49,6 +50,9 @@ class MainActivity : ComponentActivity() {
                 KioskScreen(
                     viewModel = viewModel,
                     modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+                    onOpenSettings = {
+                        startActivity(Intent(this, SettingsActivity::class.java))
+                    },
                 )
             }
         }

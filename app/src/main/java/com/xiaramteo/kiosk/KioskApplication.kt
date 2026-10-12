@@ -4,6 +4,9 @@ import android.app.Application
 import com.xiaramteo.kiosk.data.LibrarySystem
 import com.xiaramteo.kiosk.data.OfflineLibrarySystem
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
+import com.xiaramteo.kiosk.report.DailyReportSender
+import com.xiaramteo.kiosk.report.DailyReportWorker
+import com.xiaramteo.kiosk.settings.SettingsStore
 
 /**
  * 의존성을 한곳에서 묶는 자리.
@@ -18,4 +21,15 @@ class KioskApplication : Application() {
     val scanRecordStore: ScanRecordStore by lazy { ScanRecordStore(filesDir) }
 
     val librarySystem: LibrarySystem by lazy { OfflineLibrarySystem(scanRecordStore) }
+
+    /** 메일 설정. 앱 비밀번호가 들어가므로 암호화해서 보관한다. */
+    val settingsStore: SettingsStore by lazy { SettingsStore(this) }
+
+    val reportSender: DailyReportSender by lazy { DailyReportSender(scanRecordStore) }
+
+    override fun onCreate() {
+        super.onCreate()
+        // 기기를 재부팅해도 예약이 살아 있도록 실행할 때마다 다시 걸어 둔다.
+        DailyReportWorker.schedule(this, settingsStore.current())
+    }
 }

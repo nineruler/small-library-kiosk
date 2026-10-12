@@ -39,6 +39,18 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources {
+            // JavaMail 과 다른 라이브러리가 같은 경로의 라이선스 문서를 들고 와 충돌한다.
+            excludes += setOf(
+                "META-INF/NOTICE.md",
+                "META-INF/LICENSE.md",
+                "META-INF/NOTICE",
+                "META-INF/LICENSE",
+                "META-INF/DEPENDENCIES",
+            )
+        }
+    }
     lint {
         lintConfig = file("lint.xml")
     }
@@ -67,6 +79,11 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
     implementation(libs.uvc.android)
+
+    implementation(libs.javamail.android.mail)
+    implementation(libs.javamail.android.activation)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.androidx.core.ktx)
 
