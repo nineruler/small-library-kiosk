@@ -27,7 +27,7 @@ class MailSettingsTest {
     fun `메일 주소 형식을 느슨하게 거른다`() {
         listOf(
             "a@example.com",
-            "sdt.parkxi.small.lib@gmail.com",
+            "small.lib.sample@gmail.com",
             "a.b+tag@sub.example.co.kr",
         ).forEach { assertTrue(it, MailSettings.isValidEmail(it)) }
 
