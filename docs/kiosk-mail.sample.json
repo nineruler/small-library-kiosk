@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "username": "보내는계정@gmail.com",
+    "appPassword": "앱 비밀번호 16자리 (띄어쓰기 있어도 됩니다)"
+  },
+  "recipients": [
+    "받는사람1@gmail.com",
+    "받는사람2@gmail.com"
+  ],
+  "sendAt": "18:00"
+}

@@ -65,28 +65,20 @@
     <string name="error_generic">처리 중 문제가 생겼습니다</string>
 
     <!-- 사서 설정 -->
-    <string name="settings_title">사서 설정 · 기록 메일 발송</string>
-    <string name="settings_enabled">자동 발송 켜기</string>
-    <string name="settings_smtp">보내는 계정</string>
-    <string name="settings_host">SMTP 주소</string>
-    <string name="settings_port">포트</string>
-    <string name="settings_username">보내는 메일 주소</string>
-    <string name="settings_password">앱 비밀번호 16자리</string>
-    <string name="settings_password_saved">저장됨 · 바꾸려면 새로 입력</string>
-    <string name="settings_password_help">Google 계정 비밀번호가 아닙니다. 2단계 인증을 켠 뒤 앱 비밀번호를 발급받아 입력해 주세요.</string>
+    <string name="settings_title">기록 메일 발송 상태</string>
+    <string name="settings_config_ok">설정 파일을 읽었습니다</string>
+    <string name="settings_config_missing">설정 파일이 없습니다</string>
+    <string name="settings_config_invalid">설정 파일에 문제가 있습니다</string>
+    <string name="settings_config_path">파일 위치</string>
+    <string name="settings_config_disabled">enabled 가 꺼져 있어 자동 발송하지 않습니다</string>
+    <string name="settings_sender">보내는 계정</string>
+    <string name="settings_reload">다시 읽기</string>
+    <string name="settings_howto">아래 위치에 kiosk-mail.json 을 넣어 주세요. adb push 로 넣을 수 있습니다.</string>
     <string name="settings_recipients">받는 사람</string>
-    <string name="settings_recipient_hint">메일 주소</string>
-    <string name="settings_recipient_add">추가</string>
-    <string name="settings_recipient_remove">삭제</string>
-    <string name="settings_recipient_empty">받는 사람을 한 명 이상 추가해 주세요</string>
-    <string name="settings_recipient_invalid">메일 주소 형식이 아닙니다</string>
-    <string name="settings_recipient_duplicate">이미 추가된 주소입니다</string>
     <string name="settings_send_at">발송 시각</string>
     <string name="settings_pending">보내지 않은 기록 %1$d일치</string>
     <string name="settings_pending_none">보내지 않은 기록이 없습니다</string>
-    <string name="settings_save">저장</string>
     <string name="settings_send_now">지금 보내기</string>
-    <string name="settings_saved">저장했습니다</string>
     <string name="settings_sending">보내는 중…</string>
     <string name="settings_send_ok">%1$s 발송했습니다</string>
     <string name="settings_send_none">보낼 기록이 없습니다</string>

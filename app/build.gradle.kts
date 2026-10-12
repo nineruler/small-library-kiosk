@@ -82,7 +82,6 @@ dependencies {
 
     implementation(libs.javamail.android.mail)
     implementation(libs.javamail.android.activation)
-    implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.androidx.core.ktx)
@@ -91,6 +90,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // android.jar 의 org.json 은 테스트에서 빈 값만 돌려주는 스텁이라 실제 구현을 올린다.
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }

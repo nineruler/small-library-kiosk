@@ -8,55 +8,36 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.xiaramteo.kiosk.R
-import com.xiaramteo.kiosk.settings.RecipientError
+import com.xiaramteo.kiosk.settings.MailConfigResult
 import com.xiaramteo.kiosk.settings.SettingsUiState
-import java.time.LocalTime
 
 /**
- * 사서가 메일 발송을 설정하는 화면.
+ * 사서가 메일 발송 상태를 확인하고 즉시 발송을 시험하는 화면.
  *
- * 이용자가 쓰는 화면이 아니라 사서가 가끔 여는 화면이라, 키오스크 본화면과 달리 보통 크기로 둔다.
- * 비밀번호는 저장만 하고 되읽어 보여주지 않는다.
+ * 설정은 여기서 고치지 않는다. 기기의 JSON 파일을 읽어 그대로 보여주기만 한다.
+ * 로비 태블릿에서 긴 주소와 앱 비밀번호를 손으로 치는 것이 번거롭고, 한글 입력기가 켜져 있으면
+ * 영문이 자모로 바뀌어 버리기 때문이다.
  */
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
-    onEnabledChange: (Boolean) -> Unit,
-    onHostChange: (String) -> Unit,
-    onPortChange: (String) -> Unit,
-    onUsernameChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onSendAtChange: (LocalTime) -> Unit,
-    onAddRecipient: (String) -> Unit,
-    onRemoveRecipient: (String) -> Unit,
-    onClearRecipientError: () -> Unit,
-    onSave: () -> Unit,
+    onReload: () -> Unit,
     onSendNow: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -76,98 +57,44 @@ fun SettingsScreen(
             TextButton(onClick = onClose) { Text(stringResource(R.string.settings_close)) }
         }
 
+        Spacer(Modifier.height(20.dp))
+        ConfigCard(state.config)
+
         Spacer(Modifier.height(16.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Switch(checked = state.draft.enabled, onCheckedChange = onEnabledChange)
-            Spacer(Modifier.width(12.dp))
-            Text(stringResource(R.string.settings_enabled), style = MaterialTheme.typography.titleMedium)
-        }
-
-        Spacer(Modifier.height(8.dp))
         Text(
             text = if (state.pendingDays > 0) {
                 stringResource(R.string.settings_pending, state.pendingDays)
             } else {
                 stringResource(R.string.settings_pending_none)
             },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.titleMedium,
         )
-
-        SectionTitle(stringResource(R.string.settings_recipients))
-        RecipientEditor(
-            recipients = state.draft.recipients,
-            error = state.recipientError,
-            onAdd = onAddRecipient,
-            onRemove = onRemoveRecipient,
-            onClearError = onClearRecipientError,
-        )
-
-        SectionTitle(stringResource(R.string.settings_smtp))
-        OutlinedTextField(
-            value = state.draft.username,
-            onValueChange = onUsernameChange,
-            label = { Text(stringResource(R.string.settings_username)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = state.draft.password,
-            onValueChange = onPasswordChange,
-            label = { Text(stringResource(R.string.settings_password)) },
-            placeholder = if (state.hasStoredPassword && state.draft.password.isEmpty()) {
-                { Text(stringResource(R.string.settings_password_saved)) }
-            } else {
-                null
-            },
-            supportingText = { Text(stringResource(R.string.settings_password_help)) },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = state.draft.host,
-                onValueChange = onHostChange,
-                label = { Text(stringResource(R.string.settings_host)) },
-                singleLine = true,
-                modifier = Modifier.weight(2f),
-            )
-            OutlinedTextField(
-                value = state.draft.port.toString(),
-                onValueChange = onPortChange,
-                label = { Text(stringResource(R.string.settings_port)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        SectionTitle(stringResource(R.string.settings_send_at))
-        SendTimePicker(value = state.draft.sendAt, onChange = onSendAtChange)
 
         Spacer(Modifier.height(28.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(
+                onClick = onReload,
+                modifier = Modifier.weight(1f).height(72.dp),
+            ) {
+                Text(stringResource(R.string.settings_reload))
+            }
             BigButton(
-                text = stringResource(R.string.settings_save),
-                onClick = onSave,
+                text = stringResource(R.string.settings_send_now),
+                onClick = onSendNow,
+                enabled = !state.sending && state.config is MailConfigResult.Loaded,
                 modifier = Modifier.weight(1f),
             )
-            OutlinedButton(
-                onClick = onSendNow,
-                enabled = !state.sending,
-                modifier = Modifier.weight(1f).height(80.dp),
-            ) {
-                if (state.sending) {
-                    CircularProgressIndicator(Modifier.height(24.dp))
-                } else {
-                    Text(stringResource(R.string.settings_send_now))
-                }
+        }
+        if (state.sending) {
+            Spacer(Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(Modifier.height(24.dp))
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.settings_sending),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
             }
         }
         Spacer(Modifier.height(24.dp))
@@ -175,115 +102,75 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SectionTitle(text: String) {
-    Spacer(Modifier.height(24.dp))
-    Text(text, style = MaterialTheme.typography.titleLarge)
-    Spacer(Modifier.height(10.dp))
-}
-
-@Composable
-private fun RecipientEditor(
-    recipients: List<String>,
-    error: RecipientError?,
-    onAdd: (String) -> Unit,
-    onRemove: (String) -> Unit,
-    onClearError: () -> Unit,
-) {
-    var input by remember { mutableStateOf("") }
-
-    fun submit() {
-        onAdd(input)
-        input = ""
-    }
-
-    Column {
-        if (recipients.isEmpty()) {
-            Text(
-                stringResource(R.string.settings_recipient_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        recipients.forEach { address ->
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(address, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { onRemove(address) }) {
-                        Text(stringResource(R.string.settings_recipient_remove))
+private fun ConfigCard(config: MailConfigResult) {
+    val ok = config is MailConfigResult.Loaded
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (ok) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.errorContainer
+            }
+        ),
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            when (config) {
+                is MailConfigResult.Loaded -> {
+                    Text(
+                        stringResource(R.string.settings_config_ok),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Field(stringResource(R.string.settings_sender), config.settings.username)
+                    Field(
+                        stringResource(R.string.settings_recipients),
+                        config.settings.recipients.joinToString("\n"),
+                    )
+                    Field(stringResource(R.string.settings_send_at), config.settings.sendAt.toString())
+                    if (!config.settings.enabled) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.settings_config_disabled),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
                     }
+                }
+
+                is MailConfigResult.Missing -> {
+                    Text(
+                        stringResource(R.string.settings_config_missing),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        stringResource(R.string.settings_howto),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Field(stringResource(R.string.settings_config_path), config.expectedPath)
+                }
+
+                is MailConfigResult.Invalid -> {
+                    Text(
+                        stringResource(R.string.settings_config_invalid),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(config.reason, style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }
-
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it; onClearError() },
-                label = { Text(stringResource(R.string.settings_recipient_hint)) },
-                isError = error != null,
-                supportingText = error?.let {
-                    {
-                        Text(
-                            stringResource(
-                                when (it) {
-                                    RecipientError.INVALID -> R.string.settings_recipient_invalid
-                                    RecipientError.DUPLICATE -> R.string.settings_recipient_duplicate
-                                }
-                            )
-                        )
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Done,
-                ),
-                modifier = Modifier.weight(1f),
-            )
-            OutlinedButton(
-                onClick = ::submit,
-                enabled = input.isNotBlank(),
-                modifier = Modifier.height(56.dp),
-            ) {
-                Text(stringResource(R.string.settings_recipient_add))
-            }
-        }
     }
 }
 
 @Composable
-private fun SendTimePicker(value: LocalTime, onChange: (LocalTime) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
-            value = value.hour.toString(),
-            onValueChange = { raw ->
-                raw.filter(Char::isDigit).toIntOrNull()?.takeIf { it in 0..23 }
-                    ?.let { onChange(value.withHour(it)) }
-            },
-            label = { Text("시") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.width(120.dp),
-        )
-        OutlinedTextField(
-            value = value.minute.toString(),
-            onValueChange = { raw ->
-                raw.filter(Char::isDigit).toIntOrNull()?.takeIf { it in 0..59 }
-                    ?.let { onChange(value.withMinute(it)) }
-            },
-            label = { Text("분") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.width(120.dp),
-        )
-    }
+private fun Field(label: String, value: String) {
+    Spacer(Modifier.height(10.dp))
+    Text(
+        label,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Text(value, style = MaterialTheme.typography.bodyLarge, color = Color.Unspecified)
 }

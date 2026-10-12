@@ -6,7 +6,9 @@ import com.xiaramteo.kiosk.data.OfflineLibrarySystem
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
 import com.xiaramteo.kiosk.report.DailyReportSender
 import com.xiaramteo.kiosk.report.DailyReportWorker
-import com.xiaramteo.kiosk.settings.SettingsStore
+import com.xiaramteo.kiosk.settings.MailConfigLoader
+import com.xiaramteo.kiosk.settings.MailConfigResult
+import java.io.File
 
 /**
  * 의존성을 한곳에서 묶는 자리.
@@ -22,14 +24,21 @@ class KioskApplication : Application() {
 
     val librarySystem: LibrarySystem by lazy { OfflineLibrarySystem(scanRecordStore) }
 
-    /** 메일 설정. 앱 비밀번호가 들어가므로 암호화해서 보관한다. */
-    val settingsStore: SettingsStore by lazy { SettingsStore(this) }
+    /**
+     * 메일 설정은 화면이 아니라 기기의 JSON 파일에서 읽는다.
+     * 앱 전용 외부 저장소라 adb push 로 넣을 수 있고 다른 앱은 들여다볼 수 없다.
+     */
+    val mailConfigLoader: MailConfigLoader by lazy {
+        MailConfigLoader(File(getExternalFilesDir(null), "kiosk-mail.json"))
+    }
 
     val reportSender: DailyReportSender by lazy { DailyReportSender(scanRecordStore) }
 
     override fun onCreate() {
         super.onCreate()
         // 기기를 재부팅해도 예약이 살아 있도록 실행할 때마다 다시 걸어 둔다.
-        DailyReportWorker.schedule(this, settingsStore.current())
+        // 설정 파일이 아직 없으면 기본 시각으로 걸어 두고, 작업이 돌 때 다시 읽는다.
+        val settings = (mailConfigLoader.load() as? MailConfigResult.Loaded)?.settings
+        DailyReportWorker.schedule(this, settings ?: com.xiaramteo.kiosk.settings.MailSettings())
     }
 }

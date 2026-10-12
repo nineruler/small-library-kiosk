@@ -10,6 +10,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.xiaramteo.kiosk.KioskApplication
+import com.xiaramteo.kiosk.settings.MailConfigResult
 import com.xiaramteo.kiosk.settings.MailSettings
 import java.time.Duration
 import java.time.LocalDate
@@ -23,7 +24,18 @@ class DailyReportWorker(
 
     override suspend fun doWork(): Result {
         val app = applicationContext as KioskApplication
-        val settings = app.settingsStore.current()
+        // 설정 파일이 바뀌었을 수 있으니 돌 때마다 다시 읽는다.
+        val settings = when (val config = app.mailConfigLoader.load()) {
+            is MailConfigResult.Loaded -> config.settings
+            is MailConfigResult.Missing -> {
+                Log.i(TAG, "설정 파일이 없어 발송하지 않음: ${config.expectedPath}")
+                return Result.success()
+            }
+            is MailConfigResult.Invalid -> {
+                Log.w(TAG, "설정 파일에 문제가 있어 발송하지 않음: ${config.reason}")
+                return Result.success()
+            }
+        }
 
         return when (val outcome = app.reportSender.sendPending(settings, LocalDate.now())) {
             is SendOutcome.Sent -> {

@@ -12,137 +12,87 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalTime
-
-/** 받는 사람 입력에 대한 즉각 피드백. */
-enum class RecipientError { INVALID, DUPLICATE }
 
 data class SettingsUiState(
-    val draft: MailSettings = MailSettings(),
-    /** 이미 저장된 비밀번호가 있는지. 값 자체는 화면에 되읽어 보여주지 않는다. */
-    val hasStoredPassword: Boolean = false,
+    val config: MailConfigResult = MailConfigResult.Missing(""),
     val pendingDays: Int = 0,
-    val recipientError: RecipientError? = null,
     val sending: Boolean = false,
     val message: SettingsMessage? = null,
 )
 
 sealed interface SettingsMessage {
-    data object Saved : SettingsMessage
     data class SendOk(val summary: String) : SettingsMessage
     data object SendNone : SettingsMessage
     data object SendNotReady : SettingsMessage
     data class SendFailed(val reason: String) : SettingsMessage
 }
 
+/**
+ * 사서가 설정 상태를 확인하고 즉시 발송을 시험해 보는 화면의 상태.
+ *
+ * 설정은 화면에서 고치지 않고 기기의 JSON 파일에서 읽는다([MailConfigLoader]).
+ * 파일을 바꾼 뒤 이 화면을 다시 열면 [refresh] 가 새로 읽는다.
+ */
 class SettingsViewModel(
-    private val store: SettingsStore,
+    private val loader: MailConfigLoader,
     private val recordStore: ScanRecordStore,
     private val sender: DailyReportSender,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(
-        SettingsUiState(
-            draft = store.current(),
-            hasStoredPassword = store.current().password.isNotEmpty(),
-        )
-    )
+    private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
     init {
-        refreshPending()
+        refresh()
     }
 
-    fun setEnabled(value: Boolean) = edit { it.copy(enabled = value) }
-    fun setHost(value: String) = edit { it.copy(host = value.trim()) }
-    fun setUsername(value: String) = edit { it.copy(username = value.trim()) }
-    fun setPassword(value: String) = edit { it.copy(password = value.trim()) }
-    fun setSendAt(value: LocalTime) = edit { it.copy(sendAt = value) }
-
-    fun setPort(value: String) = edit { current ->
-        current.copy(port = value.filter(Char::isDigit).toIntOrNull() ?: current.port)
-    }
-
-    /** 받는 사람을 추가한다. 형식이 틀리거나 이미 있으면 거절하고 이유를 알린다. */
-    fun addRecipient(raw: String) {
-        val value = raw.trim()
-        val error = when {
-            !MailSettings.isValidEmail(value) -> RecipientError.INVALID
-            _state.value.draft.recipients.any { it.equals(value, ignoreCase = true) } ->
-                RecipientError.DUPLICATE
-            else -> null
-        }
-        if (error != null) {
-            _state.update { it.copy(recipientError = error) }
-            return
-        }
-        _state.update {
-            it.copy(
-                draft = it.draft.copy(recipients = it.draft.recipients + value),
-                recipientError = null,
-            )
+    fun refresh() {
+        _state.update { it.copy(config = loader.load()) }
+        viewModelScope.launch {
+            val days = recordStore.unsentDates(upTo = LocalDate.now()).size
+            _state.update { it.copy(pendingDays = days) }
         }
     }
-
-    fun removeRecipient(value: String) = edit { current ->
-        current.copy(recipients = current.recipients.filterNot { it == value })
-    }
-
-    fun clearRecipientError() = _state.update { it.copy(recipientError = null) }
 
     fun consumeMessage() = _state.update { it.copy(message = null) }
 
-    fun save() {
-        store.save(_state.value.draft)
-        _state.update {
-            it.copy(hasStoredPassword = it.draft.password.isNotEmpty(), message = SettingsMessage.Saved)
-        }
-    }
-
-    /** 저장한 뒤 밀린 기록을 바로 보낸다. 설정이 맞는지 사서가 즉시 확인하기 위한 것이다. */
+    /** 설정이 맞는지 사서가 바로 확인할 수 있도록 밀린 기록을 지금 보낸다. */
     fun sendNow() {
         if (_state.value.sending) return
-        store.save(_state.value.draft)
+        val settings = (_state.value.config as? MailConfigResult.Loaded)?.settings
+        if (settings == null) {
+            _state.update { it.copy(message = SettingsMessage.SendNotReady) }
+            return
+        }
         _state.update { it.copy(sending = true) }
         viewModelScope.launch {
-            val outcome = runCatching {
-                sender.sendPending(store.current(), LocalDate.now())
-            }.getOrElse { SendOutcome.Failed(LocalDate.now(), it) }
+            val outcome = runCatching { sender.sendPending(settings, LocalDate.now()) }
+                .getOrElse { SendOutcome.Failed(LocalDate.now(), it) }
 
             _state.update {
                 it.copy(
                     sending = false,
                     message = when (outcome) {
-                        is SendOutcome.Sent ->
-                            SettingsMessage.SendOk(outcome.dates.joinToString(", "))
+                        is SendOutcome.Sent -> SettingsMessage.SendOk(outcome.dates.joinToString(", "))
                         SendOutcome.NothingToSend -> SettingsMessage.SendNone
                         SendOutcome.NotConfigured -> SettingsMessage.SendNotReady
-                        is SendOutcome.Failed ->
-                            SettingsMessage.SendFailed(
-                                outcome.cause.message ?: outcome.cause::class.simpleName.orEmpty()
-                            )
+                        is SendOutcome.Failed -> SettingsMessage.SendFailed(
+                            outcome.cause.message ?: outcome.cause::class.simpleName.orEmpty()
+                        )
                     },
                 )
             }
-            refreshPending()
+            refresh()
         }
     }
 
-    private fun refreshPending() = viewModelScope.launch {
-        val days = recordStore.unsentDates(upTo = LocalDate.now()).size
-        _state.update { it.copy(pendingDays = days) }
-    }
-
-    private fun edit(block: (MailSettings) -> MailSettings) =
-        _state.update { it.copy(draft = block(it.draft)) }
-
     class Factory(
-        private val store: SettingsStore,
+        private val loader: MailConfigLoader,
         private val recordStore: ScanRecordStore,
         private val sender: DailyReportSender,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            SettingsViewModel(store, recordStore, sender) as T
+            SettingsViewModel(loader, recordStore, sender) as T
     }
 }
