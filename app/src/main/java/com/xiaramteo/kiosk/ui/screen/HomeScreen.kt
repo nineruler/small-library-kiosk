@@ -45,7 +45,6 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(24.dp))
         // 사서 설정으로 가는 숨은 입구. 이용자가 실수로 누르지 않도록 길게 누르기로 둔다.
         Text(
             text = stringResource(R.string.library_name),
@@ -70,26 +69,33 @@ fun HomeScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(32.dp))
 
-        ActionCard(
-            icon = Icons.AutoMirrored.Filled.MenuBook,
-            title = stringResource(R.string.action_borrow),
-            description = stringResource(R.string.action_borrow_desc),
-            container = MaterialTheme.colorScheme.primary,
-            onContainer = MaterialTheme.colorScheme.onPrimary,
-            onClick = onBorrow,
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.height(28.dp))
-        ActionCard(
-            icon = Icons.Default.AssignmentReturn,
-            title = stringResource(R.string.action_return),
-            description = stringResource(R.string.action_return_desc),
-            container = MaterialTheme.colorScheme.secondary,
-            onContainer = MaterialTheme.colorScheme.onSecondary,
-            onClick = onReturn,
-            modifier = Modifier.weight(1f),
+        AdaptivePane(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            gap = 28.dp,
+            first = { paneModifier ->
+                ActionCard(
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                    title = stringResource(R.string.action_borrow),
+                    description = stringResource(R.string.action_borrow_desc),
+                    container = MaterialTheme.colorScheme.primary,
+                    onContainer = MaterialTheme.colorScheme.onPrimary,
+                    onClick = onBorrow,
+                    modifier = paneModifier,
+                )
+            },
+            second = { paneModifier ->
+                ActionCard(
+                    icon = Icons.Default.AssignmentReturn,
+                    title = stringResource(R.string.action_return),
+                    description = stringResource(R.string.action_return_desc),
+                    container = MaterialTheme.colorScheme.secondary,
+                    onContainer = MaterialTheme.colorScheme.onSecondary,
+                    onClick = onReturn,
+                    modifier = paneModifier,
+                )
+            },
         )
     }
 }
@@ -106,7 +112,7 @@ private fun ActionCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = container, contentColor = onContainer),
     ) {

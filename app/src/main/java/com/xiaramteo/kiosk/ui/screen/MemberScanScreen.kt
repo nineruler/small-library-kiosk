@@ -48,57 +48,62 @@ fun MemberScanScreen(
             onHome = onHome,
         )
 
-        // 도서 스캔 화면과 같은 1.1 : 1 비율로 둬서 두 화면의 프리뷰 크기를 맞춘다.
-        ScanPane(
-            hint = stringResource(R.string.member_scan_hint),
-            onBarcode = onBarcode,
-            busy = state.busy,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.1f)
-                .padding(horizontal = 24.dp),
+        AdaptivePane(
+            modifier = Modifier.weight(1f).padding(horizontal = 24.dp, vertical = 8.dp),
+            firstWeight = 1.1f,
+            secondWeight = 1f,
+            first = { paneModifier ->
+                ScanPane(
+                    hint = stringResource(R.string.member_scan_hint),
+                    onBarcode = onBarcode,
+                    busy = state.busy,
+                    modifier = paneModifier,
+                )
+            },
+            second = { paneModifier ->
+                Column(
+                    modifier = paneModifier.padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    AnimatedVisibility(visible = state.error != null) {
+                        Column {
+                            ErrorBanner(
+                                stringResource(state.error?.messageRes() ?: R.string.error_generic)
+                            )
+                            Spacer(Modifier.height(20.dp))
+                        }
+                    }
+                    if (manualEntry) {
+                        OutlinedTextField(
+                            value = memberNumber,
+                            onValueChange = { memberNumber = it.filter(Char::isDigit) },
+                            label = { Text(stringResource(R.string.member_number_label)) },
+                            textStyle = MaterialTheme.typography.headlineMedium,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        BigButton(
+                            text = stringResource(R.string.button_next),
+                            onClick = { onBarcode(memberNumber); memberNumber = "" },
+                            enabled = memberNumber.isNotBlank() && !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        TextButton(onClick = { manualEntry = true }) {
+                            Text(
+                                stringResource(R.string.member_manual_entry),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                    }
+                }
+            },
         )
-
-        Column(
-            modifier = Modifier.fillMaxWidth().weight(1f).padding(24.dp),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            AnimatedVisibility(visible = state.error != null) {
-                Column {
-                    ErrorBanner(stringResource(state.error?.messageRes() ?: R.string.error_generic))
-                    Spacer(Modifier.height(20.dp))
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            if (manualEntry) {
-                OutlinedTextField(
-                    value = memberNumber,
-                    onValueChange = { memberNumber = it.filter(Char::isDigit) },
-                    label = { Text(stringResource(R.string.member_number_label)) },
-                    textStyle = MaterialTheme.typography.headlineMedium,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done,
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(16.dp))
-                BigButton(
-                    text = stringResource(R.string.button_next),
-                    onClick = { onBarcode(memberNumber); memberNumber = "" },
-                    enabled = memberNumber.isNotBlank() && !state.busy,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            } else {
-                TextButton(onClick = { manualEntry = true }) {
-                    Text(
-                        stringResource(R.string.member_manual_entry),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
-            }
-        }
     }
 }

@@ -76,40 +76,42 @@ fun ItemScanScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // 책 등록 라벨은 카메라로 해상되지 않아(막대가 촘촘함) 이 단계는 리더기 전용이다.
-        ScannerPanel(
-            hint = stringResource(R.string.scan_hint_multiple),
-            subHint = stringResource(R.string.scan_hint_multiple_sub),
-            busy = state.busy,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.8f)
-                .padding(horizontal = 24.dp),
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.2f)
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-        ) {
-            AnimatedVisibility(visible = state.error != null) {
-                Column {
-                    ErrorBanner(stringResource(state.error?.messageRes() ?: R.string.error_generic))
-                    Spacer(Modifier.height(12.dp))
+        AdaptivePane(
+            modifier = Modifier.weight(1f).padding(horizontal = 24.dp),
+            firstWeight = 1f,
+            secondWeight = 1.2f,
+            first = { paneModifier ->
+                // 책 등록 라벨은 카메라로 해상되지 않아(막대가 촘촘함) 이 단계는 리더기 전용이다.
+                ScannerPanel(
+                    hint = stringResource(R.string.scan_hint_multiple),
+                    subHint = stringResource(R.string.scan_hint_multiple_sub),
+                    busy = state.busy,
+                    modifier = paneModifier,
+                )
+            },
+            second = { paneModifier ->
+                Column(modifier = paneModifier.padding(vertical = 8.dp)) {
+                    AnimatedVisibility(visible = state.error != null) {
+                        Column {
+                            ErrorBanner(
+                                stringResource(state.error?.messageRes() ?: R.string.error_generic)
+                            )
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.scanned_list_title, state.scanned.size),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    ScannedList(
+                        items = state.scanned,
+                        onRemove = onRemove,
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                    )
                 }
-            }
-            Text(
-                stringResource(R.string.scanned_list_title, state.scanned.size),
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Spacer(Modifier.height(8.dp))
-            ScannedList(
-                items = state.scanned,
-                onRemove = onRemove,
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-            )
-        }
+            },
+        )
 
         BigButton(
             text = stringResource(R.string.button_done),

@@ -2,7 +2,7 @@
 
 태블릿 + USB 웹캠으로 이용자가 직접 **대출 / 반납**을 하는 Android 키오스크 앱.
 
-- 타깃 기기: 10인치급 태블릿(Lenovo Tab K10 Pro), **세로 고정**
+- 타깃 기기: 10인치급 태블릿(Lenovo TB128XU), **가로 고정** (`sensorLandscape`)
 - `minSdk 30` (Android 11) / `targetSdk 37`
 
 ## 화면 흐름
@@ -127,7 +127,9 @@ adb push kiosk-mail.json /sdcard/Android/data/com.xiaramteo.kiosk/files/
 
 ## 키오스크 모드
 
-- 세로 고정은 매니페스트에서, 화면 꺼짐 방지와 시스템 바 숨김은 `MainActivity`에서 처리한다.
+- 가로 고정은 매니페스트에서, 화면 꺼짐 방지와 시스템 바 숨김은 `MainActivity`에서 처리한다.
+- 화면들은 `ui/screen/Orientation.kt` 의 `AdaptivePane` 으로 **가로·세로 모두 대응**한다.
+  거치 방향이 운영 중에 바뀐 적이 있어 한쪽만 되는 레이아웃을 두지 않는다.
 - 전용 기기에서 홈 런처로 고정하려면 `AndroidManifest.xml`의 `CATEGORY_HOME` 인텐트 필터를
   주석 해제하고, MDM이나 `startLockTask()`로 화면 고정을 건다.
 
