@@ -25,44 +25,46 @@ sealed interface MemberDirectoryResult {
  * 분실되면 명단이 통째로 나가고, 화면도 뒤에 선 사람에게 보인다. 가린 이름으로도
  * 본인 확인에는 충분하다. 앱은 파일에 적힌 대로 보여줄 뿐 가공하지 않는다.
  */
-class MemberDirectoryStore(private val directoryFile: File) {
-
-    val path: String get() = directoryFile.absolutePath
+class MemberDirectoryStore(
+    private val resolve: () -> File?,
+    val path: String,
+) {
+    /** 파일을 직접 가리키는 간단한 형태. 테스트와 단일 파일 용도. */
+    constructor(file: File) : this({ file.takeIf(File::exists) }, file.absolutePath)
 
     private val mutex = Mutex()
     private var cached: MemberDirectoryResult? = null
-    private var cachedStamp: Pair<Long, Long>? = null
+    private var cachedStamp: Pair<String, Long>? = null
 
     /** 회원증을 찍을 때마다 호출되므로, 파일이 그대로면 읽어 둔 것을 돌려준다. */
     suspend fun load(): MemberDirectoryResult = mutex.withLock {
-        val stamp = directoryFile.takeIf { it.exists() }?.let { it.lastModified() to it.length() }
+        val file = resolve()
+        val stamp = file?.let { it.absolutePath to (it.lastModified() xor it.length()) }
         cached?.let { if (stamp == cachedStamp) return@withLock it }
-        val result = read()
+        val result = read(file)
         cached = result
         cachedStamp = stamp
         result
     }
 
-    private suspend fun read(): MemberDirectoryResult = withContext(Dispatchers.IO) {
-        if (!directoryFile.exists()) return@withContext MemberDirectoryResult.Missing(path)
+    private suspend fun read(file: File?): MemberDirectoryResult = withContext(Dispatchers.IO) {
+        if (file == null) return@withContext MemberDirectoryResult.Missing(path)
 
-        val text = runCatching { Csv.readText(directoryFile) }
+        val rows = runCatching { Workbook.readRows(file) }
             .getOrElse { return@withContext MemberDirectoryResult.Invalid("파일을 읽지 못했습니다: ${it.message}") }
 
-        val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
-        if (lines.isEmpty()) return@withContext MemberDirectoryResult.Invalid("내용이 비어 있습니다")
+        if (rows.isEmpty()) return@withContext MemberDirectoryResult.Invalid("내용이 비어 있습니다")
 
-        val header = Csv.normalizeHeader(lines.first())
-        val numberAt = with(Csv) { header.indexOfHeader(NUMBER_HEADERS) }
+        val (headerRow, header) = Csv.findHeader(rows, NUMBER_HEADERS)
             ?: return@withContext MemberDirectoryResult.Invalid(
-                "회원번호 열을 찾지 못했습니다. 첫 줄에 ${NUMBER_HEADERS.first()} 같은 열 이름이 있어야 합니다. " +
-                    "(읽은 열: ${header.joinToString()})"
+                "회원번호 열을 찾지 못했습니다. ${NUMBER_HEADERS.first()} 같은 열 이름이 있어야 합니다. " +
+                    "(위쪽에서 읽은 열: ${Csv.normalizeHeader(rows.first()).joinToString()})"
             )
+        val numberAt = with(Csv) { header.indexOfHeader(NUMBER_HEADERS) }!!
         val nameAt = with(Csv) { header.indexOfHeader(NAME_HEADERS) }
 
         val members = LinkedHashMap<String, Member>()
-        lines.drop(1).forEach { line ->
-            val cols = Csv.splitLine(line)
+        rows.drop(headerRow + 1).forEach { cols ->
             val number = cols.getOrNull(numberAt)?.trim().orEmpty()
             if (number.isEmpty()) return@forEach
             members[number] = Member(
@@ -79,7 +81,20 @@ class MemberDirectoryStore(private val directoryFile: File) {
         }
     }
 
-    private companion object {
+    companion object {
+        /**
+         * 기기에 넣어 둔 목록 파일을 찾는다. 엑셀을 먼저 보고 없으면 CSV 를 본다.
+         * 사서가 코라시스에서 받은 .xlsx 를 그대로 넣을 수 있게 하려는 것이다.
+         */
+        fun inDirectory(directory: File, baseName: String) = MemberDirectoryStore(
+            resolve = {
+                EXTENSIONS.map { File(directory, "$baseName.$it") }.firstOrNull(File::exists)
+            },
+            path = File(directory, "$baseName.xlsx").absolutePath + " (또는 .csv)",
+        )
+
+        private val EXTENSIONS = listOf("xlsx", "csv")
+
         val NUMBER_HEADERS = setOf("회원번호", "회원바코드", "바코드", "회원id", "membernumber")
         val NAME_HEADERS = setOf("회원명", "이름", "성명", "name")
     }

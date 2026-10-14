@@ -60,8 +60,23 @@ internal object Csv {
     fun List<String>.indexOfHeader(candidates: Set<String>): Int? =
         indexOfFirst { it in candidates }.takeIf { it >= 0 }
 
-    fun normalizeHeader(line: String): List<String> =
-        splitLine(line).map { it.trim().replace(" ", "") }
+    fun normalizeHeader(cells: List<String>): List<String> =
+        cells.map { it.trim().replace(" ", "") }
+
+    /**
+     * 헤더 줄이 첫 줄이 아닐 수 있어 위쪽 몇 줄을 훑는다.
+     * 코라시스가 내보내는 엑셀은 1행이 "소장자료 목록" 같은 제목이고 2행이 헤더다.
+     *
+     * [required] 중 하나라도 들어 있는 첫 줄을 헤더로 본다.
+     */
+    fun findHeader(
+        rows: List<List<String>>,
+        required: Set<String>,
+        searchDepth: Int = 10,
+    ): Pair<Int, List<String>>? =
+        rows.take(searchDepth).asSequence()
+            .mapIndexed { index, cells -> index to normalizeHeader(cells) }
+            .firstOrNull { (_, header) -> header.any { it in required } }
 
     private val CP949: Charset = runCatching { Charset.forName("CP949") }.getOrDefault(Charsets.UTF_8)
 }

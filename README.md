@@ -31,22 +31,25 @@
 
 ### 소장자료 목록 (선택)
 
-코라시스에서 소장자료를 엑셀로 내려받아 **CSV 로 저장한 뒤** 기기에 넣으면,
+코라시스에서 소장자료를 내려받아 **엑셀 파일 그대로** 기기에 넣으면,
 책 제목을 보여주고 등록되지 않은 바코드를 걸러낸다.
 
 ```
-/sdcard/Android/data/com.xiaramteo.kiosk/files/catalog.csv
+/sdcard/Android/data/com.xiaramteo.kiosk/files/catalog.xlsx   (또는 catalog.csv)
 ```
 
 ```bash
-adb push catalog.csv /sdcard/Android/data/com.xiaramteo.kiosk/files/
+adb push 자이아람터_소장도서.xlsx \
+  /sdcard/Android/data/com.xiaramteo.kiosk/files/catalog.xlsx
 ```
 
-- 첫 줄의 **열 이름으로** 찾으므로 열 순서가 달라도 되고 쓰지 않는 열이 섞여 있어도 된다.
+- **.xlsx 를 그대로 읽는다.** "CSV로 저장" 단계가 없으니 인코딩 문제도 생기지 않는다
+- 코라시스 엑셀은 **1행이 제목("소장자료 목록"), 2행이 헤더**다. 위쪽 몇 줄을 훑어 헤더를 찾는다
+- **열 이름으로** 찾으므로 열 순서가 달라도 되고 쓰지 않는 열이 섞여 있어도 된다.
   등록번호/바코드/자료바코드, 서명/제목/도서명, 저자/지은이, 청구기호 표기를 모두 받는다
-- 한국어 엑셀의 "CSV로 저장"은 UTF-8 이 아닌 경우가 많아 **CP949 도 함께 읽는다**
+- CSV 도 받는다. 한국어 엑셀이 CP949 로 저장해도 읽는다
 - 파일을 새로 넣으면 **앱 재시작 없이** 다음 스캔부터 반영된다
-- `docs/catalog.sample.csv` 참고
+- 실제 자이아람터 소장도서(1,777권)로 확인했다. 전부 제목·저자·청구기호까지 읽혔다
 
 **목록 파일이 없으면 검증하지 않고 바코드를 그대로 받는다.** 목록을 넣는 순간 검증이 켜지는
 구조라, 목록이 없거나 읽히지 않는다는 이유로 대출이 막히지는 않는다.
@@ -69,7 +72,8 @@ adb push catalog.csv /sdcard/Android/data/com.xiaramteo.kiosk/files/
 >
 > 메일로 나가는 대출 기록에는 **회원번호만** 들어간다. 이름은 섞이지 않는다.
 
-`docs/members.sample.csv` 참고. 열 이름은 회원번호/회원바코드/바코드, 회원명/이름/성명 을 받는다.
+`members.xlsx` 또는 `members.csv` 둘 다 받는다. 열 이름은 회원번호/회원바코드/바코드, 회원명/이름/성명.
+`docs/members.sample.csv` 참고.
 
 ### 남는 한계
 

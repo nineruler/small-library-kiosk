@@ -28,7 +28,7 @@ class KioskApplication : Application() {
      * 코라시스에서 내려받아 넣어 둔 소장자료 목록. 있으면 제목을 보여주고 바코드를 검증한다.
      */
     val catalogStore: CatalogStore by lazy {
-        CatalogStore(File(getExternalFilesDir(null), "catalog.csv"))
+        CatalogStore.inDirectory(getExternalFilesDir(null)!!, "catalog")
     }
 
     /**
@@ -36,7 +36,7 @@ class KioskApplication : Application() {
      * 로비에 둔 기기라 전체 이름을 두지 않는 쪽이 분실·어깨너머 노출 모두에 안전하다.
      */
     val memberDirectoryStore: MemberDirectoryStore by lazy {
-        MemberDirectoryStore(File(getExternalFilesDir(null), "members.csv"))
+        MemberDirectoryStore.inDirectory(getExternalFilesDir(null)!!, "members")
     }
 
     val librarySystem: LibrarySystem by lazy {
