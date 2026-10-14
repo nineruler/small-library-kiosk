@@ -102,7 +102,7 @@ class ScanRecordStore(
     ).joinToString(",") { escape(it) }
 
     private fun parseCsvLine(line: String): ScanRecord? {
-        val cols = splitCsv(line)
+        val cols = Csv.splitLine(line)
         if (cols.size < 4) return null
         val at = runCatching { ZonedDateTime.parse(cols[0], TIMESTAMP) }.getOrNull() ?: return null
         val mode = runCatching { RecordMode.valueOf(cols[1]) }.getOrNull() ?: return null
@@ -117,34 +117,6 @@ class ScanRecordStore(
             value
         }
 
-    /**
-     * 따옴표로 감싼 칸을 존중하며 한 줄을 쪼갠다.
-     * 단순히 쉼표로 split 하면 escape 해 둔 값이 도로 깨진다.
-     */
-    private fun splitCsv(line: String): List<String> {
-        val cols = mutableListOf<String>()
-        val cell = StringBuilder()
-        var quoted = false
-        var i = 0
-        while (i < line.length) {
-            val c = line[i]
-            when {
-                quoted && c == '"' && i + 1 < line.length && line[i + 1] == '"' -> {
-                    cell.append('"')
-                    i++
-                }
-                c == '"' -> quoted = !quoted
-                c == ',' && !quoted -> {
-                    cols += cell.toString()
-                    cell.setLength(0)
-                }
-                else -> cell.append(c)
-            }
-            i++
-        }
-        cols += cell.toString()
-        return cols
-    }
 
     private companion object {
         const val CSV_HEADER = "기록시각,구분,회원번호,장서바코드"

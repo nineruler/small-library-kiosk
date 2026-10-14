@@ -6,8 +6,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.nio.charset.Charset
-import java.nio.charset.CodingErrorAction
 
 /** 장서 목록을 읽은 결과. 화면이 사서에게 상태를 그대로 보여줄 수 있도록 이유를 담는다. */
 sealed interface CatalogResult {
@@ -52,25 +50,25 @@ class CatalogStore(private val catalogFile: File) {
     private suspend fun read(): CatalogResult = withContext(Dispatchers.IO) {
         if (!catalogFile.exists()) return@withContext CatalogResult.Missing(path)
 
-        val text = runCatching { readText(catalogFile) }
+        val text = runCatching { Csv.readText(catalogFile) }
             .getOrElse { return@withContext CatalogResult.Invalid("파일을 읽지 못했습니다: ${it.message}") }
 
         val lines = text.lineSequence().filter { it.isNotBlank() }.toList()
         if (lines.isEmpty()) return@withContext CatalogResult.Invalid("내용이 비어 있습니다")
 
-        val header = splitCsv(lines.first()).map { it.trim().replace(" ", "") }
-        val barcodeAt = header.indexOfFirstMatching(BARCODE_HEADERS)
+        val header = Csv.normalizeHeader(lines.first())
+        val barcodeAt = with(Csv) { header.indexOfHeader(BARCODE_HEADERS) }
             ?: return@withContext CatalogResult.Invalid(
                 "등록번호 열을 찾지 못했습니다. 첫 줄에 ${BARCODE_HEADERS.first()} 같은 열 이름이 있어야 합니다. " +
                     "(읽은 열: ${header.joinToString()})"
             )
-        val titleAt = header.indexOfFirstMatching(TITLE_HEADERS)
-        val authorAt = header.indexOfFirstMatching(AUTHOR_HEADERS)
-        val callNumberAt = header.indexOfFirstMatching(CALL_NUMBER_HEADERS)
+        val titleAt = with(Csv) { header.indexOfHeader(TITLE_HEADERS) }
+        val authorAt = with(Csv) { header.indexOfHeader(AUTHOR_HEADERS) }
+        val callNumberAt = with(Csv) { header.indexOfHeader(CALL_NUMBER_HEADERS) }
 
         val items = LinkedHashMap<String, BookItem>()
         lines.drop(1).forEach { line ->
-            val cols = splitCsv(line)
+            val cols = Csv.splitLine(line)
             val barcode = cols.getOrNull(barcodeAt)?.trim().orEmpty()
             if (barcode.isEmpty()) return@forEach
             items[barcode] = BookItem(
@@ -89,60 +87,13 @@ class CatalogStore(private val catalogFile: File) {
         }
     }
 
-    /**
-     * 엑셀에서 "CSV로 저장"하면 한국어 환경에서는 UTF-8 이 아니라 CP949 로 저장되는 일이 잦다.
-     * 그대로 UTF-8 로 읽으면 제목이 전부 깨지므로, UTF-8 로 읽히지 않으면 CP949 로 다시 읽는다.
-     */
-    private fun readText(file: File): String {
-        val bytes = file.readBytes()
-        val withoutBom = if (bytes.size >= 3 &&
-            bytes[0] == 0xEF.toByte() && bytes[1] == 0xBB.toByte() && bytes[2] == 0xBF.toByte()
-        ) {
-            bytes.copyOfRange(3, bytes.size)
-        } else {
-            bytes
-        }
-
-        val strictUtf8 = Charsets.UTF_8.newDecoder()
-            .onMalformedInput(CodingErrorAction.REPORT)
-            .onUnmappableCharacter(CodingErrorAction.REPORT)
-
-        return runCatching { strictUtf8.decode(java.nio.ByteBuffer.wrap(withoutBom)).toString() }
-            .getOrElse { String(withoutBom, CP949) }
-    }
 
     private fun List<String>.valueAt(index: Int?): String? =
         index?.let { getOrNull(it) }?.trim()?.ifBlank { null }
 
-    private fun List<String>.indexOfFirstMatching(candidates: Set<String>): Int? =
-        indexOfFirst { it in candidates }.takeIf { it >= 0 }
 
-    /** 따옴표로 감싼 칸을 존중하며 한 줄을 쪼갠다. 서명에 쉼표가 흔히 들어간다. */
-    private fun splitCsv(line: String): List<String> {
-        val cols = mutableListOf<String>()
-        val cell = StringBuilder()
-        var quoted = false
-        var i = 0
-        while (i < line.length) {
-            val c = line[i]
-            when {
-                quoted && c == '"' && i + 1 < line.length && line[i + 1] == '"' -> {
-                    cell.append('"'); i++
-                }
-                c == '"' -> quoted = !quoted
-                c == ',' && !quoted -> { cols += cell.toString(); cell.setLength(0) }
-                else -> cell.append(c)
-            }
-            i++
-        }
-        cols += cell.toString()
-        return cols
-    }
 
     private companion object {
-        val CP949: Charset = runCatching { Charset.forName("CP949") }.getOrDefault(Charsets.UTF_8)
-
-        // 공백을 지운 뒤 비교하므로 "등록 번호" 같은 표기도 걸린다.
         val BARCODE_HEADERS = setOf("등록번호", "바코드", "자료바코드", "등록번호(바코드)", "barcode")
         val TITLE_HEADERS = setOf("서명", "제목", "도서명", "자료명", "서명저자사항", "title")
         val AUTHOR_HEADERS = setOf("저자", "지은이", "저자사항", "author")

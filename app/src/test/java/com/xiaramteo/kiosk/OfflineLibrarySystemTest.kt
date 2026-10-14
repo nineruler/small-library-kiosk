@@ -5,6 +5,7 @@ import com.xiaramteo.kiosk.data.KioskError
 import com.xiaramteo.kiosk.data.LibrarySystemException
 import com.xiaramteo.kiosk.data.OfflineLibrarySystem
 import com.xiaramteo.kiosk.data.local.CatalogStore
+import com.xiaramteo.kiosk.data.local.MemberDirectoryStore
 import com.xiaramteo.kiosk.data.local.RecordMode
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
 import kotlinx.coroutines.test.runTest
@@ -26,8 +27,11 @@ class OfflineLibrarySystemTest {
     private val clock = Clock.fixed(Instant.parse("2026-10-07T09:00:00Z"), zone)
     private val today = LocalDate.now(clock)
 
-    private fun system(store: ScanRecordStore, catalog: CatalogStore? = null) =
-        OfflineLibrarySystem(store, catalog, clock)
+    private fun system(
+        store: ScanRecordStore,
+        catalog: CatalogStore? = null,
+        directory: MemberDirectoryStore? = null,
+    ) = OfflineLibrarySystem(store, catalog, directory, clock)
 
     @Test
     fun `대출하면 회원번호와 장서바코드가 함께 기록된다`() = runTest {
@@ -91,6 +95,44 @@ class OfflineLibrarySystemTest {
         val error = runCatching { system.findItem("8801234567890") }.exceptionOrNull()
         assertTrue(error is LibrarySystemException)
         assertEquals(KioskError.UNKNOWN_ITEM, (error as LibrarySystemException).error)
+    }
+
+    @Test
+    fun `회원 목록이 있으면 가린 이름을 보여준다`() = runTest {
+        val file = java.io.File(tempFolder.root, "members.csv")
+        file.writeText("회원번호,회원명\n1000000001,구*린")
+        val system = system(
+            ScanRecordStore(tempFolder.root, zone),
+            directory = MemberDirectoryStore(file),
+        )
+        assertEquals("구*린", system.findMember("1000000001").displayName)
+    }
+
+    @Test
+    fun `회원 목록에 없는 회원증은 거른다`() = runTest {
+        val file = java.io.File(tempFolder.root, "members.csv")
+        file.writeText("회원번호,회원명\n1000000001,구*린")
+        val system = system(
+            ScanRecordStore(tempFolder.root, zone),
+            directory = MemberDirectoryStore(file),
+        )
+        val error = runCatching { system.findMember("9999999999") }.exceptionOrNull()
+        assertEquals(KioskError.UNKNOWN_MEMBER, (error as LibrarySystemException).error)
+    }
+
+    @Test
+    fun `대출 기록에는 회원번호만 남기고 이름은 남기지 않는다`() = runTest {
+        val file = java.io.File(tempFolder.root, "members.csv")
+        file.writeText("회원번호,회원명\n1000000001,구*린")
+        val store = ScanRecordStore(tempFolder.root, zone)
+        val system = system(store, directory = MemberDirectoryStore(file))
+
+        system.borrow(system.findMember("1000000001"), system.findItem("EM0000000263"))
+
+        val record = store.readRecords(today).single()
+        assertEquals("1000000001", record.memberBarcode)
+        // 기록 파일은 메일로 나가므로 이름이 섞이면 안 된다.
+        assertTrue(store.csvFor(today)!!.readText().none { it == '*' })
     }
 
     @Test

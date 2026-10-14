@@ -4,6 +4,7 @@ import android.app.Application
 import com.xiaramteo.kiosk.data.LibrarySystem
 import com.xiaramteo.kiosk.data.OfflineLibrarySystem
 import com.xiaramteo.kiosk.data.local.CatalogStore
+import com.xiaramteo.kiosk.data.local.MemberDirectoryStore
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
 import com.xiaramteo.kiosk.report.DailyReportSender
 import com.xiaramteo.kiosk.report.DailyReportWorker
@@ -30,8 +31,16 @@ class KioskApplication : Application() {
         CatalogStore(File(getExternalFilesDir(null), "catalog.csv"))
     }
 
+    /**
+     * 회원 목록. 이름은 사서가 내보낼 때 가려서 넣는다(예: "구*린").
+     * 로비에 둔 기기라 전체 이름을 두지 않는 쪽이 분실·어깨너머 노출 모두에 안전하다.
+     */
+    val memberDirectoryStore: MemberDirectoryStore by lazy {
+        MemberDirectoryStore(File(getExternalFilesDir(null), "members.csv"))
+    }
+
     val librarySystem: LibrarySystem by lazy {
-        OfflineLibrarySystem(scanRecordStore, catalogStore)
+        OfflineLibrarySystem(scanRecordStore, catalogStore, memberDirectoryStore)
     }
 
     /**
