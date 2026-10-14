@@ -1,5 +1,7 @@
 package com.xiaramteo.kiosk.data
 
+import com.xiaramteo.kiosk.data.local.CatalogResult
+import com.xiaramteo.kiosk.data.local.CatalogStore
 import com.xiaramteo.kiosk.data.local.RecordMode
 import com.xiaramteo.kiosk.data.local.ScanRecord
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
@@ -14,11 +16,14 @@ import java.time.ZonedDateTime
  * 그래서 이 구현은 **검증하지 않고 기록만 한다.** 찍힌 바코드를 그대로 받아 적고,
  * 실제 대출 가능 여부(이미 대출 중인지, 연체인지)는 나중에 사서가 코라시스에서 확인한다.
  *
- * 장서·회원 목록이 없으므로 제목과 이름도 알 수 없다. 화면은 [BookItem.displayTitle] 처럼
- * 바코드로 대신 표시한다. 나중에 목록을 확보하면 여기에 조회를 붙이면 된다.
+ * 장서 목록([catalog])을 넣어 두면 제목을 보여주고 등록되지 않은 바코드를 걸러낸다.
+ * 목록이 없으면 예전처럼 검증 없이 바코드를 그대로 받는다. 목록을 넣는 순간 검증이 켜지는 셈이다.
+ *
+ * 회원 목록은 아직 쓰지 않는다. 개인정보라 반출이 조심스러워 회원은 번호만 기록한다.
  */
 class OfflineLibrarySystem(
     private val store: ScanRecordStore,
+    private val catalog: CatalogStore? = null,
     private val clock: Clock = Clock.systemDefaultZone(),
     private val loanPeriodDays: Long = 14,
 ) : LibrarySystem {
@@ -26,8 +31,14 @@ class OfflineLibrarySystem(
     override suspend fun findMember(barcode: String): Member =
         Member(memberId = barcode, barcode = barcode)
 
-    override suspend fun findItem(barcode: String): BookItem =
-        BookItem(itemId = barcode, barcode = barcode)
+    override suspend fun findItem(barcode: String): BookItem {
+        val loaded = catalog?.load() as? CatalogResult.Loaded
+            // 목록이 없거나 읽히지 않으면 검증하지 않는다. 목록 문제로 대출이 막히면 안 된다.
+            ?: return BookItem(itemId = barcode, barcode = barcode)
+
+        return loaded.items[barcode]
+            ?: throw LibrarySystemException(KioskError.UNKNOWN_ITEM)
+    }
 
     override suspend fun borrow(member: Member, item: BookItem): ItemResult {
         record(RecordMode.BORROW, member.barcode, item.barcode)

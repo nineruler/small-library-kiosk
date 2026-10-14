@@ -3,6 +3,7 @@ package com.xiaramteo.kiosk
 import android.app.Application
 import com.xiaramteo.kiosk.data.LibrarySystem
 import com.xiaramteo.kiosk.data.OfflineLibrarySystem
+import com.xiaramteo.kiosk.data.local.CatalogStore
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
 import com.xiaramteo.kiosk.report.DailyReportSender
 import com.xiaramteo.kiosk.report.DailyReportWorker
@@ -22,7 +23,16 @@ class KioskApplication : Application() {
     /** 대출/반납 기록 원본. 발송이나 내보내기도 모두 이 저장소를 본다. */
     val scanRecordStore: ScanRecordStore by lazy { ScanRecordStore(filesDir) }
 
-    val librarySystem: LibrarySystem by lazy { OfflineLibrarySystem(scanRecordStore) }
+    /**
+     * 코라시스에서 내려받아 넣어 둔 소장자료 목록. 있으면 제목을 보여주고 바코드를 검증한다.
+     */
+    val catalogStore: CatalogStore by lazy {
+        CatalogStore(File(getExternalFilesDir(null), "catalog.csv"))
+    }
+
+    val librarySystem: LibrarySystem by lazy {
+        OfflineLibrarySystem(scanRecordStore, catalogStore)
+    }
 
     /**
      * 메일 설정은 화면이 아니라 기기의 JSON 파일에서 읽는다.

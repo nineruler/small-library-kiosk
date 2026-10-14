@@ -28,6 +28,8 @@
     <!-- 회원 인증 -->
     <string name="member_scan_title">회원증을 찍어 주세요</string>
     <string name="member_scan_hint">회원증을 리더기나 카메라에 대 주세요</string>
+    <string name="reader_here">여기 리더기에</string>
+    <string name="reader_here_sub">회원증을 대 주세요</string>
     <string name="member_manual_entry">회원번호 직접 입력</string>
     <string name="member_number_label">회원번호</string>
     <string name="member_welcome">%1$s 님, 안녕하세요!</string>

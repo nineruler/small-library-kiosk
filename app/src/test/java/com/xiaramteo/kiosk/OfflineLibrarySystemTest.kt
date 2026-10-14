@@ -1,7 +1,10 @@
 package com.xiaramteo.kiosk
 
 import com.xiaramteo.kiosk.data.ItemResult
+import com.xiaramteo.kiosk.data.KioskError
+import com.xiaramteo.kiosk.data.LibrarySystemException
 import com.xiaramteo.kiosk.data.OfflineLibrarySystem
+import com.xiaramteo.kiosk.data.local.CatalogStore
 import com.xiaramteo.kiosk.data.local.RecordMode
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
 import kotlinx.coroutines.test.runTest
@@ -23,7 +26,8 @@ class OfflineLibrarySystemTest {
     private val clock = Clock.fixed(Instant.parse("2026-10-07T09:00:00Z"), zone)
     private val today = LocalDate.now(clock)
 
-    private fun system(store: ScanRecordStore) = OfflineLibrarySystem(store, clock)
+    private fun system(store: ScanRecordStore, catalog: CatalogStore? = null) =
+        OfflineLibrarySystem(store, catalog, clock)
 
     @Test
     fun `대출하면 회원번호와 장서바코드가 함께 기록된다`() = runTest {
@@ -65,6 +69,37 @@ class OfflineLibrarySystemTest {
         val member = system(ScanRecordStore(tempFolder.root, zone)).findMember("1000000001")
         assertEquals("1000000001", member.displayName)
         assertEquals(null, member.remainingLoans)
+    }
+
+    @Test
+    fun `장서 목록이 있으면 제목을 보여준다`() = runTest {
+        val catalogFile = java.io.File(tempFolder.root, "catalog.csv")
+        catalogFile.writeText("등록번호,서명,저자\nEM0000000263,어두워지면 일어나라,샬레인 해리스")
+        val system = system(ScanRecordStore(tempFolder.root, zone), CatalogStore(catalogFile))
+
+        val item = system.findItem("EM0000000263")
+        assertEquals("어두워지면 일어나라", item.displayTitle)
+        assertEquals("샬레인 해리스", item.displaySubtitle)
+    }
+
+    @Test
+    fun `장서 목록에 없는 바코드는 등록되지 않은 책으로 거른다`() = runTest {
+        val catalogFile = java.io.File(tempFolder.root, "catalog.csv")
+        catalogFile.writeText("등록번호,서명\nEM0000000263,데미안")
+        val system = system(ScanRecordStore(tempFolder.root, zone), CatalogStore(catalogFile))
+
+        val error = runCatching { system.findItem("8801234567890") }.exceptionOrNull()
+        assertTrue(error is LibrarySystemException)
+        assertEquals(KioskError.UNKNOWN_ITEM, (error as LibrarySystemException).error)
+    }
+
+    @Test
+    fun `목록 파일이 없으면 검증하지 않고 그대로 받는다`() = runTest {
+        // 목록 문제로 대출이 막히면 안 된다. 목록을 넣는 순간 검증이 켜지는 구조다.
+        val catalog = CatalogStore(java.io.File(tempFolder.root, "없는파일.csv"))
+        val system = system(ScanRecordStore(tempFolder.root, zone), catalog)
+
+        assertEquals("8801234567890", system.findItem("8801234567890").displayTitle)
     }
 
     @Test

@@ -95,6 +95,11 @@ fun MemberScanScreen(
                             modifier = Modifier.fillMaxWidth(),
                         )
                     } else {
+                        // 리더기는 화면 밖 실물이라, 처음 오는 이용자는 어디에 대야 할지 모른다.
+                        ReaderPointer(
+                            modifier = Modifier.weight(1f),
+                            side = ReaderSide.RIGHT,
+                        )
                         TextButton(onClick = { manualEntry = true }) {
                             Text(
                                 stringResource(R.string.member_manual_entry),
