@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xiaramteo.kiosk.R
 import com.xiaramteo.kiosk.data.BookItem
+import com.xiaramteo.kiosk.data.Member
 import com.xiaramteo.kiosk.ui.KioskMode
 import com.xiaramteo.kiosk.ui.KioskUiState
 import com.xiaramteo.kiosk.ui.messageRes
@@ -47,35 +48,6 @@ fun ItemScanScreen(
     Column(modifier = modifier.fillMaxSize()) {
         KioskTopBar(title = stringResource(titleRes), onBack = onBack, onHome = onHome)
 
-        state.member?.let { member ->
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                ),
-            ) {
-                Column(Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
-                    // 장서·회원 목록이 없으면 이름을 모르므로 회원번호로 대신 부른다.
-                    Text(
-                        text = member.name
-                            ?.let { stringResource(R.string.member_welcome, it) }
-                            ?: stringResource(R.string.member_welcome_number, member.barcode),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    val remaining = member.remainingLoans
-                    Text(
-                        text = if (member.loanCount != null && remaining != null) {
-                            stringResource(R.string.member_loan_status, member.loanCount, remaining)
-                        } else {
-                            stringResource(R.string.member_verified)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-
         // 리더기가 화면 오른쪽에 놓이므로 안내도 오른쪽에 둔다.
         // 이용자 시선이 안내에서 실물 리더기로 자연스럽게 이어지게 하려는 것이다.
         AdaptivePane(
@@ -85,6 +57,9 @@ fun ItemScanScreen(
             gap = 24.dp,
             first = { paneModifier ->
                 Column(modifier = paneModifier.padding(vertical = 8.dp)) {
+                    // 회원 카드를 왼쪽 안에 두면 오른쪽 리더기 가이드가 위까지 올라가
+                    // 그만큼 높아진다. 이용자가 바라보는 안내가 커지는 쪽이 낫다.
+                    state.member?.let { member -> MemberCard(member) }
                     AnimatedVisibility(visible = state.error != null) {
                         Column {
                             ErrorBanner(
@@ -126,6 +101,36 @@ fun ItemScanScreen(
             modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
         )
     }
+}
+
+@Composable
+private fun MemberCard(member: Member) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+            // 장서·회원 목록이 없으면 이름을 모르므로 회원번호로 대신 부른다.
+            Text(
+                text = member.name
+                    ?.let { stringResource(R.string.member_welcome, it) }
+                    ?: stringResource(R.string.member_welcome_number, member.barcode),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            val remaining = member.remainingLoans
+            Text(
+                text = if (member.loanCount != null && remaining != null) {
+                    stringResource(R.string.member_loan_status, member.loanCount, remaining)
+                } else {
+                    stringResource(R.string.member_verified)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+    Spacer(Modifier.height(14.dp))
 }
 
 @Composable
