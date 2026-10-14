@@ -44,6 +44,8 @@ fun ScannerPanel(
     modifier: Modifier = Modifier,
     subHint: String? = null,
     busy: Boolean = false,
+    /** 실물 리더기가 놓인 방향. 화살표가 그쪽을 가리켜 이용자가 어디에 댈지 알게 한다. */
+    side: ReaderSide? = null,
 ) {
     val transition = rememberInfiniteTransition(label = "scanner-ready")
     val pulse by transition.animateFloat(
@@ -92,6 +94,10 @@ fun ScannerPanel(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
+                }
+                side?.let {
+                    Spacer(Modifier.height(24.dp))
+                    ReaderArrow(side = it)
                 }
             }
         }

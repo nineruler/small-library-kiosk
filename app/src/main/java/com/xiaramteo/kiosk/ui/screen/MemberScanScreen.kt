@@ -49,7 +49,7 @@ fun MemberScanScreen(
         )
 
         AdaptivePane(
-            modifier = Modifier.weight(1f).padding(horizontal = 24.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 24.dp, vertical = 8.dp),
             firstWeight = 1.1f,
             secondWeight = 1f,
             first = { paneModifier ->

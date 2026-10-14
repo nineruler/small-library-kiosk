@@ -76,20 +76,14 @@ fun ItemScanScreen(
             Spacer(Modifier.height(16.dp))
         }
 
+        // 리더기가 화면 오른쪽에 놓이므로 안내도 오른쪽에 둔다.
+        // 이용자 시선이 안내에서 실물 리더기로 자연스럽게 이어지게 하려는 것이다.
         AdaptivePane(
-            modifier = Modifier.weight(1f).padding(horizontal = 24.dp),
-            firstWeight = 1f,
-            secondWeight = 1.2f,
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 24.dp),
+            firstWeight = 1.2f,
+            secondWeight = 1f,
+            gap = 24.dp,
             first = { paneModifier ->
-                // 책 등록 라벨은 카메라로 해상되지 않아(막대가 촘촘함) 이 단계는 리더기 전용이다.
-                ScannerPanel(
-                    hint = stringResource(R.string.scan_hint_multiple),
-                    subHint = stringResource(R.string.scan_hint_multiple_sub),
-                    busy = state.busy,
-                    modifier = paneModifier,
-                )
-            },
-            second = { paneModifier ->
                 Column(modifier = paneModifier.padding(vertical = 8.dp)) {
                     AnimatedVisibility(visible = state.error != null) {
                         Column {
@@ -103,7 +97,7 @@ fun ItemScanScreen(
                         stringResource(R.string.scanned_list_title, state.scanned.size),
                         style = MaterialTheme.typography.titleLarge,
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(12.dp))
                     ScannedList(
                         items = state.scanned,
                         onRemove = onRemove,
@@ -111,7 +105,19 @@ fun ItemScanScreen(
                     )
                 }
             },
+            second = { paneModifier ->
+                // 책 등록 라벨은 카메라로 해상되지 않아(막대가 촘촘함) 이 단계는 리더기 전용이다.
+                ScannerPanel(
+                    hint = stringResource(R.string.scan_hint_multiple),
+                    subHint = stringResource(R.string.scan_hint_multiple_sub),
+                    busy = state.busy,
+                    side = ReaderSide.RIGHT,
+                    modifier = paneModifier.padding(vertical = 8.dp),
+                )
+            },
         )
+
+        Spacer(Modifier.height(16.dp))
 
         BigButton(
             text = stringResource(R.string.button_done),

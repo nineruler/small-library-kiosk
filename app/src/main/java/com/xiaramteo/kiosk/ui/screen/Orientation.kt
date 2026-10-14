@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,10 +31,12 @@ fun AdaptivePane(
     first: @Composable (Modifier) -> Unit,
     second: @Composable (Modifier) -> Unit,
 ) {
+    // 자식에 matchParentSize 를 쓰면 부모 Box 크기에 기여하지 않아 Box 가 0 이 된다.
+    // 바깥 Column 이 자식을 늘려 주지 않는 경우(가운데 정렬 등) 화면이 통째로 비어 버린다.
     BoxWithConstraints(modifier) {
         if (isLandscape) {
             Row(
-                modifier = Modifier.matchParentSize(),
+                modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(gap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -42,7 +45,7 @@ fun AdaptivePane(
             }
         } else {
             Column(
-                modifier = Modifier.matchParentSize(),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(gap),
             ) {
                 first(Modifier.weight(firstWeight).fillMaxWidth())

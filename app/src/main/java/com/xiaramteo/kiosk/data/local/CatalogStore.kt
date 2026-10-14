@@ -45,7 +45,15 @@ class CatalogStore(
         val file = resolve()
         val stamp = file?.let { it.absolutePath to (it.lastModified() xor it.length()) }
         cached?.let { if (stamp == cachedStamp) return@withLock it }
+        // 목록이 커지면 첫 스캔이 느려질 수 있어 소요 시간을 남긴다.
+        // 실측: 1,777권 엑셀 약 2초(Lenovo TB128XU).
+        val startedAt = android.os.SystemClock.elapsedRealtime()
         val result = read(file)
+        android.util.Log.i(
+            "CatalogStore",
+            "목록 읽기 ${android.os.SystemClock.elapsedRealtime() - startedAt}ms " +
+                "(${(result as? CatalogResult.Loaded)?.items?.size ?: 0}권)",
+        )
         cached = result
         cachedStamp = stamp
         result

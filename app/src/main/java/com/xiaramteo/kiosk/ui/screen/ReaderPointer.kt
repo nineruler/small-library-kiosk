@@ -76,24 +76,41 @@ fun ReaderPointer(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(20.dp))
-        Icon(
-            imageVector = when (side) {
-                ReaderSide.LEFT -> Icons.Default.ArrowBack
-                ReaderSide.RIGHT -> Icons.AutoMirrored.Filled.ArrowForward
-                ReaderSide.BOTTOM -> Icons.Default.ArrowDownward
-            },
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier
-                .size(80.dp)
-                .offset(
-                    x = when (side) {
-                        ReaderSide.LEFT -> (-nudge).dp
-                        ReaderSide.RIGHT -> nudge.dp
-                        ReaderSide.BOTTOM -> 0.dp
-                    },
-                    y = if (side == ReaderSide.BOTTOM) nudge.dp else 0.dp,
-                ),
-        )
+        ReaderArrow(side)
     }
+}
+
+/**
+ * 실물 리더기 쪽을 가리키는 화살표. 그쪽으로 밀려갔다 돌아오며 방향을 반복해 알린다.
+ * 멈춘 화살표보다 시선을 끌고, 처음 오는 이용자가 어디에 댈지 바로 알아챈다.
+ */
+@Composable
+fun ReaderArrow(side: ReaderSide, modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "reader-arrow")
+    val nudge by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 14f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "nudge",
+    )
+
+    Icon(
+        imageVector = when (side) {
+            ReaderSide.LEFT -> Icons.Default.ArrowBack
+            ReaderSide.RIGHT -> Icons.AutoMirrored.Filled.ArrowForward
+            ReaderSide.BOTTOM -> Icons.Default.ArrowDownward
+        },
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.secondary,
+        modifier = modifier
+            .size(80.dp)
+            .offset(
+                x = when (side) {
+                    ReaderSide.LEFT -> (-nudge).dp
+                    ReaderSide.RIGHT -> nudge.dp
+                    ReaderSide.BOTTOM -> 0.dp
+                },
+                y = if (side == ReaderSide.BOTTOM) nudge.dp else 0.dp,
+            ),
+    )
 }
