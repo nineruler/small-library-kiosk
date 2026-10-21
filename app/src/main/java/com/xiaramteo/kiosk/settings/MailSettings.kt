@@ -18,6 +18,11 @@ data class MailSettings(
     val recipients: List<String> = emptyList(),
     val sendAt: LocalTime = DEFAULT_SEND_AT,
     val enabled: Boolean = false,
+    /**
+     * 사서 화면에 들어갈 때 묻는 비밀번호. 비어 있으면 묻지 않는다.
+     * 로비에 둔 기기라 대출 기록을 아무나 들여다보지 못하게 하려는 것이다.
+     */
+    val adminPin: String = "",
 ) {
     /** 보낼 준비가 된 설정인지. 하나라도 비면 발송을 시도하지 않는다. */
     val isSendable: Boolean

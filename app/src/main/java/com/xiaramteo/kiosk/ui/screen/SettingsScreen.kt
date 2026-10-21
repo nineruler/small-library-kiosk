@@ -24,7 +24,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xiaramteo.kiosk.R
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import com.xiaramteo.kiosk.data.local.DaySummary
+import com.xiaramteo.kiosk.data.local.RecordMode
+import com.xiaramteo.kiosk.data.local.ScanRecord
 import com.xiaramteo.kiosk.settings.MailConfigResult
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import com.xiaramteo.kiosk.settings.SettingsUiState
 
 /**
@@ -39,6 +47,7 @@ fun SettingsScreen(
     state: SettingsUiState,
     onReload: () -> Unit,
     onSendNow: () -> Unit,
+    onSelectDate: (LocalDate) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -57,10 +66,10 @@ fun SettingsScreen(
             TextButton(onClick = onClose) { Text(stringResource(R.string.settings_close)) }
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         ConfigCard(state.config)
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         Text(
             text = if (state.pendingDays > 0) {
                 stringResource(R.string.settings_pending, state.pendingDays)
@@ -70,7 +79,18 @@ fun SettingsScreen(
             style = MaterialTheme.typography.titleMedium,
         )
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
+        Text(stringResource(R.string.records_title), style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(10.dp))
+        RecordBrowser(
+            days = state.days,
+            selectedDate = state.selectedDate,
+            records = state.selectedRecords,
+            onSelectDate = onSelectDate,
+            modifier = Modifier.fillMaxWidth().height(380.dp),
+        )
+
+        Spacer(Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedButton(
                 onClick = onReload,
@@ -100,6 +120,134 @@ fun SettingsScreen(
         Spacer(Modifier.height(24.dp))
     }
 }
+
+/** 날짜 목록과 그날의 기록을 나란히 보여준다. 사서가 무엇이 남았는지 직접 확인하는 자리다. */
+@Composable
+private fun RecordBrowser(
+    days: List<DaySummary>,
+    selectedDate: LocalDate?,
+    records: List<ScanRecord>,
+    onSelectDate: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (days.isEmpty()) {
+        Text(
+            stringResource(R.string.records_empty),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(days, key = { it.date }) { day ->
+                DayRow(day, selected = day.date == selectedDate) { onSelectDate(day.date) }
+            }
+        }
+        Card(
+            modifier = Modifier.weight(1.4f).fillMaxHeight(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
+        ) {
+            if (records.isEmpty()) {
+                Text(
+                    stringResource(R.string.records_pick_day),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(16.dp),
+                )
+            } else {
+                LazyColumn(modifier = Modifier.padding(12.dp)) {
+                    items(records) { record -> RecordRow(record) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayRow(day: DaySummary, selected: Boolean, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Text(day.date.toString(), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.records_day_summary, day.borrowed, day.returned),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = if (day.sent) {
+                    stringResource(R.string.records_sent)
+                } else {
+                    stringResource(R.string.records_unsent)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (day.sent) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecordRow(record: ScanRecord) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            record.recordedAt.format(TIME_ONLY),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(
+                if (record.mode == RecordMode.BORROW) {
+                    R.string.records_borrow
+                } else {
+                    R.string.records_return
+                }
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (record.mode == RecordMode.BORROW) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.secondary
+            },
+        )
+        Text(
+            record.itemBarcode,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        record.memberBarcode?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private val TIME_ONLY: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 @Composable
 private fun ConfigCard(config: MailConfigResult) {

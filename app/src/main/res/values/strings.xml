@@ -87,4 +87,22 @@
     <string name="settings_send_not_ready">설정을 모두 채우고 자동 발송을 켜 주세요</string>
     <string name="settings_send_failed">발송 실패: %1$s</string>
     <string name="settings_close">닫기</string>
+
+    <!-- 사서 화면 잠금 -->
+    <string name="pin_title">사서 비밀번호</string>
+    <string name="pin_hint">비밀번호를 입력해 주세요</string>
+    <string name="pin_wrong">비밀번호가 맞지 않습니다</string>
+    <string name="pin_clear">지우기</string>
+    <string name="pin_enter">확인</string>
+    <string name="pin_not_set">관리자 비밀번호가 설정되지 않았습니다. 설정 파일에 adminPin 을 넣어 주세요.</string>
+
+    <!-- 기록 조회 -->
+    <string name="records_title">기록</string>
+    <string name="records_empty">기록이 없습니다</string>
+    <string name="records_day_summary">대출 %1$d · 반납 %2$d</string>
+    <string name="records_sent">발송됨</string>
+    <string name="records_unsent">미발송</string>
+    <string name="records_pick_day">왼쪽에서 날짜를 선택해 주세요</string>
+    <string name="records_borrow">대출</string>
+    <string name="records_return">반납</string>
 </resources>

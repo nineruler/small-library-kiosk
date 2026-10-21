@@ -94,6 +94,7 @@ class MailConfigLoader(private val configFile: File) {
                 recipients = recipients,
                 sendAt = sendAt,
                 enabled = root.optBoolean("enabled", true),
+                adminPin = root.optString("adminPin").trim(),
             )
         )
     }

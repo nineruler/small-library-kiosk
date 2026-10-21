@@ -20,6 +20,16 @@ data class ScanRecord(
 
 enum class RecordMode { BORROW, RETURN }
 
+/** 사서 화면에 날짜별로 한 줄씩 보여주기 위한 요약. */
+data class DaySummary(
+    val date: LocalDate,
+    val borrowed: Int,
+    val returned: Int,
+    val sent: Boolean,
+) {
+    val total: Int get() = borrowed + returned
+}
+
 /**
  * 대출/반납 기록을 날짜별 CSV 파일에 쌓아 두는 저장소.
  *
@@ -62,6 +72,26 @@ class ScanRecordStore(
                 .mapNotNull { runCatching { LocalDate.parse(it.nameWithoutExtension) }.getOrNull() }
                 .filter { it <= upTo && !markerFor(it).exists() }
                 .sorted()
+        }
+    }
+
+    /** 기록이 있는 날짜를 최근 순으로 요약한다. 사서가 무엇이 남았는지 한눈에 보기 위한 것이다. */
+    suspend fun daySummaries(): List<DaySummary> = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            recordsDir.listFiles().orEmpty()
+                .mapNotNull { file ->
+                    val date = runCatching { LocalDate.parse(file.nameWithoutExtension) }.getOrNull()
+                        ?: return@mapNotNull null
+                    val records = file.readLines().drop(1).filter { it.isNotBlank() }
+                        .mapNotNull { parseCsvLine(it) }
+                    DaySummary(
+                        date = date,
+                        borrowed = records.count { it.mode == RecordMode.BORROW },
+                        returned = records.count { it.mode == RecordMode.RETURN },
+                        sent = markerFor(date).exists(),
+                    )
+                }
+                .sortedByDescending { it.date }
         }
     }
 

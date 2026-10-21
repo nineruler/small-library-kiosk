@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xiaramteo.kiosk.settings.SettingsMessage
 import com.xiaramteo.kiosk.settings.SettingsViewModel
+import com.xiaramteo.kiosk.ui.screen.PinGate
 import com.xiaramteo.kiosk.ui.screen.SettingsScreen
 import com.xiaramteo.kiosk.ui.theme.KioskTheme
 
@@ -65,13 +66,23 @@ class SettingsActivity : ComponentActivity() {
                     viewModel.consumeMessage()
                 }
 
-                SettingsScreen(
-                    state = state,
-                    onReload = viewModel::refresh,
-                    onSendNow = viewModel::sendNow,
-                    onClose = { finish() },
-                    modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
-                )
+                if (state.unlocked) {
+                    SettingsScreen(
+                        state = state,
+                        onReload = viewModel::refresh,
+                        onSendNow = viewModel::sendNow,
+                        onSelectDate = viewModel::selectDate,
+                        onClose = { finish() },
+                        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+                    )
+                } else {
+                    PinGate(
+                        onSubmit = viewModel::submitPin,
+                        onCancel = { finish() },
+                        wrong = state.pinWrong,
+                        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+                    )
+                }
             }
         }
     }

@@ -3,6 +3,8 @@ package com.xiaramteo.kiosk.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.xiaramteo.kiosk.data.local.DaySummary
+import com.xiaramteo.kiosk.data.local.ScanRecord
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
 import com.xiaramteo.kiosk.report.DailyReportSender
 import com.xiaramteo.kiosk.report.SendOutcome
@@ -18,6 +20,12 @@ data class SettingsUiState(
     val pendingDays: Int = 0,
     val sending: Boolean = false,
     val message: SettingsMessage? = null,
+    /** 비밀번호를 통과했는지. 설정에 비밀번호가 없으면 처음부터 통과로 둔다. */
+    val unlocked: Boolean = false,
+    val pinWrong: Boolean = false,
+    val days: List<DaySummary> = emptyList(),
+    val selectedDate: LocalDate? = null,
+    val selectedRecords: List<ScanRecord> = emptyList(),
 )
 
 sealed interface SettingsMessage {
@@ -47,10 +55,40 @@ class SettingsViewModel(
     }
 
     fun refresh() {
-        _state.update { it.copy(config = loader.load()) }
+        val config = loader.load()
+        val pin = (config as? MailConfigResult.Loaded)?.settings?.adminPin.orEmpty()
+        _state.update {
+            // 비밀번호를 정해 두지 않았으면 잠그지 않는다. 설정 전에 사서가 갇히면 곤란하다.
+            it.copy(config = config, unlocked = it.unlocked || pin.isEmpty())
+        }
         viewModelScope.launch {
-            val days = recordStore.unsentDates(upTo = LocalDate.now()).size
-            _state.update { it.copy(pendingDays = days) }
+            val pending = recordStore.unsentDates(upTo = LocalDate.now()).size
+            val days = recordStore.daySummaries()
+            _state.update { current ->
+                val selected = current.selectedDate ?: days.firstOrNull()?.date
+                current.copy(pendingDays = pending, days = days, selectedDate = selected)
+            }
+            _state.value.selectedDate?.let { selectDate(it) }
+        }
+    }
+
+    /** 입력한 비밀번호를 확인한다. */
+    fun submitPin(pin: String) {
+        val expected = (_state.value.config as? MailConfigResult.Loaded)?.settings?.adminPin.orEmpty()
+        if (expected.isNotEmpty() && pin == expected) {
+            _state.update { it.copy(unlocked = true, pinWrong = false) }
+        } else {
+            _state.update { it.copy(pinWrong = true) }
+        }
+    }
+
+    fun selectDate(date: LocalDate) {
+        _state.update { it.copy(selectedDate = date) }
+        viewModelScope.launch {
+            val records = recordStore.readRecords(date)
+            _state.update {
+                if (it.selectedDate == date) it.copy(selectedRecords = records) else it
+            }
         }
     }
 
