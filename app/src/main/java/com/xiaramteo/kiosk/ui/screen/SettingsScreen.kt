@@ -233,10 +233,11 @@ private fun DayRow(day: DaySummary, selected: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * 기록 한 줄. 윗줄에 사람이 읽는 말(제목·회원명), 아랫줄에 실제로 찍힌 바코드를 둔다.
+ * 기록 한 줄. 책 제목과 회원명만 보여준다.
  *
- * 사서가 코라시스에 옮겨 적을 때 둘 다 필요하다. 제목으로 어떤 책인지 알아보고,
- * 바코드로 코라시스에서 찾는다. 목록에 없는 바코드면 윗줄에 바코드가 그대로 올라온다.
+ * 바코드와 회원번호는 사서가 읽어도 알아볼 수 없는 숫자열이라 줄만 길어지고,
+ * 로비 태블릿이라 뒤에 선 사람에게도 보인다. 목록에 없어서 제목을 못 찾은 때만
+ * 어쩔 수 없이 바코드를 그대로 올린다 — 그래야 어느 기록인지 가릴 수 있다.
  */
 @Composable
 private fun RecordRow(view: RecordView, onDelete: () -> Unit) {
@@ -273,17 +274,15 @@ private fun RecordRow(view: RecordView, onDelete: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = listOfNotNull(
-                    record.itemBarcode.takeIf { view.title != null },
-                    view.memberName?.let { "$it (${record.memberBarcode})" }
-                        ?: record.memberBarcode,
-                ).joinToString("  ·  "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            view.memberName?.let { name ->
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         TextButton(onClick = onDelete) {
             Text(
@@ -320,7 +319,7 @@ private fun DeleteConfirmDialog(
                 )
                 view.memberName?.let {
                     Text(
-                        "$it (${record.memberBarcode})",
+                        it,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

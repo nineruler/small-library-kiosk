@@ -197,7 +197,7 @@ class KioskViewModel(
 /** 화면별 무입력 복귀 시간(초). null이면 그 화면에서는 자동 복귀하지 않는다. */
 data class IdleTimeout(
     val scanSeconds: Int? = 90,
-    val finishedSeconds: Int? = 20,
+    val finishedSeconds: Int? = 10,
 ) {
     fun secondsFor(state: KioskUiState): Int? = when (state) {
         KioskUiState.Home, is KioskUiState.Submitting -> null
