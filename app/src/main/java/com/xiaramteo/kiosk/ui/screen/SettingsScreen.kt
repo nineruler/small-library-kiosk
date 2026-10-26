@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xiaramteo.kiosk.R
@@ -290,6 +291,9 @@ private fun RecordRow(view: RecordView, onDelete: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            // 칸 안에서 오른쪽에 붙인다. 이름 길이가 제각각이라 왼쪽에 맞추면
+            // 끝이 들쭉날쭉해 보이고, 제목과도 너무 붙는다.
+            textAlign = TextAlign.End,
             modifier = Modifier.width(MEMBER_COLUMN),
         )
         TextButton(onClick = onDelete) {
