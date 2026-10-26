@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xiaramteo.kiosk.R
@@ -193,7 +192,9 @@ private fun RecordBrowser(
                     modifier = Modifier.padding(16.dp),
                 )
             } else {
-                LazyColumn(modifier = Modifier.padding(12.dp)) {
+                // 세로 여백은 줄마다 들어 있다. 여기서 또 주면 왼쪽 날짜 목록보다
+                // 첫 줄이 한참 내려가 윗부분이 비어 보인다.
+                LazyColumn(modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)) {
                     itemsIndexed(records) { index, record ->
                         RecordRow(record) { pendingDelete = index }
                     }
@@ -291,9 +292,6 @@ private fun RecordRow(view: RecordView, onDelete: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            // 칸 안에서 오른쪽에 붙인다. 이름 길이가 제각각이라 왼쪽에 맞추면
-            // 끝이 들쭉날쭉해 보이고, 제목과도 너무 붙는다.
-            textAlign = TextAlign.End,
             modifier = Modifier.width(MEMBER_COLUMN),
         )
         TextButton(onClick = onDelete) {
@@ -359,8 +357,12 @@ private fun DeleteConfirmDialog(
     )
 }
 
-/** 회원명 칸의 너비. 줄마다 같은 자리에 와야 위아래로 훑어 읽을 수 있다. */
-private val MEMBER_COLUMN = 120.dp
+/**
+ * 회원명 칸의 너비. 줄마다 같은 자리에 와야 위아래로 훑어 읽을 수 있다.
+ * 한글 이름은 거의 세 글자지만 드물게 네다섯 자가 있어, bodyMedium(18sp) 기준
+ * 다섯 글자가 들어가는 만큼만 잡는다. 더 넓게 잡으면 제목이 그만큼 일찍 잘린다.
+ */
+private val MEMBER_COLUMN = 96.dp
 
 private val TIME_ONLY: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
