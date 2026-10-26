@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -238,7 +239,11 @@ private fun DayRow(day: DaySummary, selected: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * 기록 한 줄. 책 제목과 회원명만 보여준다.
+ * 기록 한 줄. 시각 · 구분 · 책 제목 · 회원명을 한 줄에 나란히 둔다.
+ *
+ * 회원명은 대출에만 있다(반납은 책만 찍는다). 줄마다 같은 자리에 와야 위아래로
+ * 훑어 읽을 수 있어서, 반납 줄에서도 그 칸을 비워 둔 채 자리를 지킨다.
+ * 제목이 길면 회원명 칸을 밀어내지 않도록 제목만 ... 으로 줄인다.
  *
  * 바코드와 회원번호는 사서가 읽어도 알아볼 수 없는 숫자열이라 줄만 길어지고,
  * 로비 태블릿이라 뒤에 선 사람에게도 보인다. 목록에 없어서 제목을 못 찾은 때만
@@ -272,23 +277,21 @@ private fun RecordRow(view: RecordView, onDelete: () -> Unit) {
                 MaterialTheme.colorScheme.secondary
             },
         )
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = view.title ?: record.itemBarcode,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            view.memberName?.let { name ->
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
+        Text(
+            text = view.title ?: record.itemBarcode,
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = view.memberName.orEmpty(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.width(MEMBER_COLUMN),
+        )
         TextButton(onClick = onDelete) {
             Text(
                 stringResource(R.string.records_delete),
@@ -351,6 +354,9 @@ private fun DeleteConfirmDialog(
         },
     )
 }
+
+/** 회원명 칸의 너비. 줄마다 같은 자리에 와야 위아래로 훑어 읽을 수 있다. */
+private val MEMBER_COLUMN = 120.dp
 
 private val TIME_ONLY: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
