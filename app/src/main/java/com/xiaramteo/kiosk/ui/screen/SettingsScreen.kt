@@ -61,7 +61,11 @@ fun SettingsScreen(
     Column(
         // 화면 전체를 굴리지 않는다. 머리말은 고정해 두고 기록 칸만 남는 높이를 다 쓰게 해야
         // 한 번에 보이는 기록이 늘어난다. 기록 칸 안쪽은 LazyColumn 이 알아서 굴린다.
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        // 위아래 여백은 숫자가 아니라 눈에 보이는 공백을 맞춘다. 제목 글자 위에 행간이
+        // 얹히는 만큼 위가 더 커 보여서, 아래를 그만큼 더 준다(기기에서 재어 맞췄다).
+        modifier = modifier
+            .fillMaxSize()
+            .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -128,7 +132,6 @@ fun SettingsScreen(
                 )
             }
         }
-        Spacer(Modifier.height(24.dp))
     }
 }
 
