@@ -101,9 +101,13 @@ fun SettingsScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedButton(
                 onClick = onReload,
-                modifier = Modifier.weight(1f).height(72.dp),
+                // 옆의 BigButton 과 같은 높이로 맞춘다. 나란히 선 버튼의 키가 다르면 눈에 띈다.
+                modifier = Modifier.weight(1f).height(80.dp),
             ) {
-                Text(stringResource(R.string.settings_reload))
+                Text(
+                    stringResource(R.string.settings_reload),
+                    style = MaterialTheme.typography.titleLarge,
+                )
             }
             BigButton(
                 text = stringResource(R.string.settings_send_now),
