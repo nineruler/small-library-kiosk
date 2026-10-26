@@ -68,7 +68,6 @@
 
     <!-- 사서 설정 -->
     <string name="settings_title">기록 메일 발송 상태</string>
-    <string name="settings_config_ok">설정 파일을 읽었습니다</string>
     <string name="settings_config_missing">설정 파일이 없습니다</string>
     <string name="settings_config_invalid">설정 파일에 문제가 있습니다</string>
     <string name="settings_config_path">파일 위치</string>
