@@ -1,8 +1,10 @@
 package com.xiaramteo.kiosk
 
 import android.app.Application
+import android.util.Log
 import com.xiaramteo.kiosk.data.LibrarySystem
 import com.xiaramteo.kiosk.data.OfflineLibrarySystem
+import com.xiaramteo.kiosk.data.local.BundledData
 import com.xiaramteo.kiosk.data.local.CatalogStore
 import com.xiaramteo.kiosk.data.local.MemberDirectoryStore
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
@@ -55,6 +57,11 @@ class KioskApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // 앱에 같이 넣어 둔 목록을 꺼내 놓는다. 기기에 이미 있는 파일은 그대로 둔다.
+        getExternalFilesDir(null)?.let { dir ->
+            BundledData.unpackMissing(assets, dir).forEach { Log.i("Kiosk", "번들 목록을 꺼냈습니다: $it") }
+        }
+
         // 기기를 재부팅해도 예약이 살아 있도록 실행할 때마다 다시 걸어 둔다.
         // 설정 파일이 아직 없으면 기본 시각으로 걸어 두고, 작업이 돌 때 다시 읽는다.
         val settings = (mailConfigLoader.load() as? MailConfigResult.Loaded)?.settings
