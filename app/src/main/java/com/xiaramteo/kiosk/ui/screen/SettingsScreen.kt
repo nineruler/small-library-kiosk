@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -61,10 +59,9 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+        // 화면 전체를 굴리지 않는다. 머리말은 고정해 두고 기록 칸만 남는 높이를 다 쓰게 해야
+        // 한 번에 보이는 기록이 늘어난다. 기록 칸 안쪽은 LazyColumn 이 알아서 굴린다.
+        modifier = modifier.fillMaxSize().padding(24.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -97,7 +94,7 @@ fun SettingsScreen(
             records = state.selectedRecords,
             onSelectDate = onSelectDate,
             onDeleteRecord = onDeleteRecord,
-            modifier = Modifier.fillMaxWidth().height(380.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f),
         )
 
         Spacer(Modifier.height(24.dp))
@@ -159,6 +156,7 @@ private fun RecordBrowser(
             stringResource(R.string.records_empty),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier,
         )
         return
     }
@@ -362,20 +360,28 @@ private fun ConfigCard(config: MailConfigResult) {
             }
         ),
     ) {
-        Column(Modifier.padding(20.dp)) {
+        Column(Modifier.padding(16.dp)) {
             when (config) {
                 is MailConfigResult.Loaded -> {
-                    Text(
-                        stringResource(R.string.settings_config_ok),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Field(stringResource(R.string.settings_sender), config.settings.username)
-                    Field(
-                        stringResource(R.string.settings_recipients),
-                        config.settings.recipients.joinToString("\n"),
-                    )
-                    Field(stringResource(R.string.settings_send_at), config.settings.sendAt.toString())
+                    // 설정이 제대로 읽혔는지는 내용이 보이는 것으로 충분하다. 제목 한 줄과
+                    // 세로로 쌓인 세 항목이 화면 높이를 꽤 먹어서, 가로로 나란히 둔다.
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        Field(
+                            stringResource(R.string.settings_sender),
+                            config.settings.username,
+                            Modifier.weight(1.2f),
+                        )
+                        Field(
+                            stringResource(R.string.settings_recipients),
+                            config.settings.recipients.joinToString("\n"),
+                            Modifier.weight(1.2f),
+                        )
+                        Field(
+                            stringResource(R.string.settings_send_at),
+                            config.settings.sendAt.toString(),
+                            Modifier.weight(0.6f),
+                        )
+                    }
                     if (!config.settings.enabled) {
                         Spacer(Modifier.height(8.dp))
                         Text(
@@ -396,6 +402,7 @@ private fun ConfigCard(config: MailConfigResult) {
                         stringResource(R.string.settings_howto),
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                    Spacer(Modifier.height(10.dp))
                     Field(stringResource(R.string.settings_config_path), config.expectedPath)
                 }
 
@@ -413,12 +420,13 @@ private fun ConfigCard(config: MailConfigResult) {
 }
 
 @Composable
-private fun Field(label: String, value: String) {
-    Spacer(Modifier.height(10.dp))
-    Text(
-        label,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Text(value, style = MaterialTheme.typography.bodyLarge, color = Color.Unspecified)
+private fun Field(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(value, style = MaterialTheme.typography.bodyLarge, color = Color.Unspecified)
+    }
 }
