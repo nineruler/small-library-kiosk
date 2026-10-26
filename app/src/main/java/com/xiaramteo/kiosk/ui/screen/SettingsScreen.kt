@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -18,18 +19,25 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xiaramteo.kiosk.R
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import com.xiaramteo.kiosk.data.local.DaySummary
 import com.xiaramteo.kiosk.data.local.RecordMode
 import com.xiaramteo.kiosk.data.local.ScanRecord
+import com.xiaramteo.kiosk.settings.RecordView
 import com.xiaramteo.kiosk.settings.MailConfigResult
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -48,6 +56,7 @@ fun SettingsScreen(
     onReload: () -> Unit,
     onSendNow: () -> Unit,
     onSelectDate: (LocalDate) -> Unit,
+    onDeleteRecord: (Int) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -87,6 +96,7 @@ fun SettingsScreen(
             selectedDate = state.selectedDate,
             records = state.selectedRecords,
             onSelectDate = onSelectDate,
+            onDeleteRecord = onDeleteRecord,
             modifier = Modifier.fillMaxWidth().height(380.dp),
         )
 
@@ -126,10 +136,24 @@ fun SettingsScreen(
 private fun RecordBrowser(
     days: List<DaySummary>,
     selectedDate: LocalDate?,
-    records: List<ScanRecord>,
+    records: List<RecordView>,
     onSelectDate: (LocalDate) -> Unit,
+    onDeleteRecord: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // 어느 기록을 지울지 묻는 중인지. 화면 안에서만 쓰는 상태라 ViewModel 로 올리지 않는다.
+    var pendingDelete by remember(selectedDate) { mutableStateOf<Int?>(null) }
+
+    pendingDelete?.let { index ->
+        records.getOrNull(index)?.let { record ->
+            DeleteConfirmDialog(
+                view = record,
+                onConfirm = { pendingDelete = null; onDeleteRecord(index) },
+                onDismiss = { pendingDelete = null },
+            )
+        }
+    }
+
     if (days.isEmpty()) {
         Text(
             stringResource(R.string.records_empty),
@@ -163,7 +187,9 @@ private fun RecordBrowser(
                 )
             } else {
                 LazyColumn(modifier = Modifier.padding(12.dp)) {
-                    items(records) { record -> RecordRow(record) }
+                    itemsIndexed(records) { index, record ->
+                        RecordRow(record) { pendingDelete = index }
+                    }
                 }
             }
         }
@@ -206,11 +232,19 @@ private fun DayRow(day: DaySummary, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
+/**
+ * 기록 한 줄. 윗줄에 사람이 읽는 말(제목·회원명), 아랫줄에 실제로 찍힌 바코드를 둔다.
+ *
+ * 사서가 코라시스에 옮겨 적을 때 둘 다 필요하다. 제목으로 어떤 책인지 알아보고,
+ * 바코드로 코라시스에서 찾는다. 목록에 없는 바코드면 윗줄에 바코드가 그대로 올라온다.
+ */
 @Composable
-private fun RecordRow(record: ScanRecord) {
+private fun RecordRow(view: RecordView, onDelete: () -> Unit) {
+    val record = view.record
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             record.recordedAt.format(TIME_ONLY),
@@ -232,19 +266,86 @@ private fun RecordRow(record: ScanRecord) {
                 MaterialTheme.colorScheme.secondary
             },
         )
-        Text(
-            record.itemBarcode,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
-        )
-        record.memberBarcode?.let {
+        Column(Modifier.weight(1f)) {
             Text(
-                it,
+                text = view.title ?: record.itemBarcode,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = listOfNotNull(
+                    record.itemBarcode.takeIf { view.title != null },
+                    view.memberName?.let { "$it (${record.memberBarcode})" }
+                        ?: record.memberBarcode,
+                ).joinToString("  ·  "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        TextButton(onClick = onDelete) {
+            Text(
+                stringResource(R.string.records_delete),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
             )
         }
     }
+}
+
+/**
+ * 기록은 코라시스에 옮겨 적기 전까지 유일한 원본이라 되돌릴 수 없다.
+ * 그래서 무엇을 지우는지 그대로 보여주고 한 번 더 묻는다.
+ */
+@Composable
+private fun DeleteConfirmDialog(
+    view: RecordView,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val record = view.record
+    val mode = stringResource(
+        if (record.mode == RecordMode.BORROW) R.string.records_borrow else R.string.records_return
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.records_delete_title)) },
+        text = {
+            Column {
+                Text(
+                    "${record.recordedAt.format(TIME_ONLY)}  $mode  ${view.title ?: record.itemBarcode}",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                view.memberName?.let {
+                    Text(
+                        "$it (${record.memberBarcode})",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.records_delete_warning),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    stringResource(R.string.records_delete_confirm),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.records_delete_cancel))
+            }
+        },
+    )
 }
 
 private val TIME_ONLY: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")

@@ -105,4 +105,11 @@
     <string name="records_pick_day">왼쪽에서 날짜를 선택해 주세요</string>
     <string name="records_borrow">대출</string>
     <string name="records_return">반납</string>
+    <string name="records_delete">삭제</string>
+    <string name="records_delete_title">이 기록을 지울까요?</string>
+    <string name="records_delete_warning">지운 기록은 되돌릴 수 없습니다. 아직 보내지 않은 기록이라면 코라시스에 옮겨 적을 내용도 함께 사라집니다.</string>
+    <string name="records_delete_confirm">지우기</string>
+    <string name="records_delete_cancel">그대로 두기</string>
+    <string name="records_deleted">기록을 지웠습니다</string>
+    <string name="records_delete_failed">기록을 지우지 못했습니다</string>
 </resources>

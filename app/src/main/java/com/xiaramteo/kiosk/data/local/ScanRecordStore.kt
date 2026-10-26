@@ -112,6 +112,37 @@ class ScanRecordStore(
         }
     }
 
+    /**
+     * 그날 [index] 번째 기록 한 건을 지운다. [readRecords] 가 돌려준 순서를 그대로 센다.
+     *
+     * 잘못 찍힌 기록(시험 중에 남은 것, 두 번 찍힌 것)을 사서가 걷어내기 위한 것이다.
+     * 이 파일이 유일한 원본이라 되돌릴 수 없으므로 화면에서 한 번 더 묻는다.
+     * 마지막 한 건을 지우면 그날 파일과 발송 표식을 함께 치운다. 빈 파일을 남기면
+     * 요약에 "0건"짜리 날짜가 계속 보이기 때문이다.
+     */
+    suspend fun deleteRecord(date: LocalDate, index: Int): Boolean = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            val file = fileFor(date)
+            if (!file.exists()) return@withLock false
+            val lines = file.readLines()
+            val header = lines.firstOrNull() ?: return@withLock false
+            val body = lines.drop(1).filter { it.isNotBlank() }
+
+            // 읽히지 않는 줄은 화면에 뜨지 않으므로, 보이는 것과 같은 순서로 세어야 한다.
+            val visible = body.indices.filter { parseCsvLine(body[it]) != null }
+            val at = visible.getOrNull(index) ?: return@withLock false
+
+            val remaining = body.filterIndexed { i, _ -> i != at }
+            if (remaining.isEmpty()) {
+                file.delete()
+                markerFor(date).delete()
+            } else {
+                file.writeText((listOf(header) + remaining).joinToString("\n", postfix = "\n"))
+            }
+            true
+        }
+    }
+
     /** 발송에 성공한 날짜를 표식으로 남긴다. 기록 자체는 지우지 않는다. */
     suspend fun markSent(date: LocalDate): Unit = withContext(Dispatchers.IO) {
         mutex.withLock {

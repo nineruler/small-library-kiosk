@@ -31,7 +31,13 @@ class SettingsActivity : ComponentActivity() {
     private val app: KioskApplication get() = application as KioskApplication
 
     private val viewModel: SettingsViewModel by viewModels {
-        SettingsViewModel.Factory(app.mailConfigLoader, app.scanRecordStore, app.reportSender)
+        SettingsViewModel.Factory(
+            loader = app.mailConfigLoader,
+            recordStore = app.scanRecordStore,
+            sender = app.reportSender,
+            catalog = app.catalogStore,
+            directory = app.memberDirectoryStore,
+        )
     }
 
     override fun onResume() {
@@ -50,6 +56,8 @@ class SettingsActivity : ComponentActivity() {
                 val context = LocalContext.current
 
                 val sendNoneText = stringResource(R.string.settings_send_none)
+                val deletedText = stringResource(R.string.records_deleted)
+                val deleteFailedText = stringResource(R.string.records_delete_failed)
                 val notReadyText = stringResource(R.string.settings_send_not_ready)
 
                 LaunchedEffect(state.message) {
@@ -61,6 +69,8 @@ class SettingsActivity : ComponentActivity() {
                         SettingsMessage.SendNotReady -> notReadyText
                         is SettingsMessage.SendFailed ->
                             getString(R.string.settings_send_failed, message.reason)
+                        SettingsMessage.Deleted -> deletedText
+                        SettingsMessage.DeleteFailed -> deleteFailedText
                     }
                     Toast.makeText(context, text, Toast.LENGTH_LONG).show()
                     viewModel.consumeMessage()
@@ -72,6 +82,7 @@ class SettingsActivity : ComponentActivity() {
                         onReload = viewModel::refresh,
                         onSendNow = viewModel::sendNow,
                         onSelectDate = viewModel::selectDate,
+                        onDeleteRecord = viewModel::deleteRecord,
                         onClose = { finish() },
                         modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
                     )
