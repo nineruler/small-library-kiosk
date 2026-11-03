@@ -2,6 +2,7 @@ package com.xiaramteo.kiosk
 
 import com.xiaramteo.kiosk.settings.MailConfigLoader
 import com.xiaramteo.kiosk.settings.MailConfigResult
+import com.xiaramteo.kiosk.settings.MailSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -68,7 +69,8 @@ class MailConfigLoaderTest {
         val settings = (result as MailConfigResult.Loaded).settings
         assertEquals("smtp.gmail.com", settings.host)
         assertEquals(587, settings.port)
-        assertEquals(LocalTime.of(18, 0), settings.sendAt)
+        // 기본값 자체가 바뀔 수 있으니 숫자를 박지 않는다.
+        assertEquals(MailSettings.DEFAULT_SEND_AT, settings.sendAt)
         assertTrue("enabled 기본값은 켜짐", settings.enabled)
     }
 

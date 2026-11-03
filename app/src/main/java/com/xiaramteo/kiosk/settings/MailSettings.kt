@@ -35,7 +35,7 @@ data class MailSettings(
     companion object {
         const val DEFAULT_HOST = "smtp.gmail.com"
         const val DEFAULT_PORT = 587
-        val DEFAULT_SEND_AT: LocalTime = LocalTime.of(18, 0)
+        val DEFAULT_SEND_AT: LocalTime = LocalTime.of(22, 0)
 
         /** 아주 느슨한 형식 검사. 오타로 통째로 빠지는 것만 막는다. */
         fun isValidEmail(value: String): Boolean {

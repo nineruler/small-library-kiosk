@@ -57,6 +57,7 @@ class SettingsActivity : ComponentActivity() {
 
                 val sendNoneText = stringResource(R.string.settings_send_none)
                 val deletedText = stringResource(R.string.records_deleted)
+                val sendAtFailedText = stringResource(R.string.send_at_failed)
                 val deleteFailedText = stringResource(R.string.records_delete_failed)
                 val notReadyText = stringResource(R.string.settings_send_not_ready)
 
@@ -71,6 +72,9 @@ class SettingsActivity : ComponentActivity() {
                             getString(R.string.settings_send_failed, message.reason)
                         SettingsMessage.Deleted -> deletedText
                         SettingsMessage.DeleteFailed -> deleteFailedText
+                        is SettingsMessage.SendAtChanged ->
+                            getString(R.string.send_at_changed, message.sendAt)
+                        SettingsMessage.SendAtFailed -> sendAtFailedText
                     }
                     Toast.makeText(context, text, Toast.LENGTH_LONG).show()
                     viewModel.consumeMessage()
@@ -83,6 +87,7 @@ class SettingsActivity : ComponentActivity() {
                         onSendNow = viewModel::sendNow,
                         onSelectDate = viewModel::selectDate,
                         onDeleteRecord = viewModel::deleteRecord,
+                        onChangeSendAt = viewModel::setSendAt,
                         onClose = { finish() },
                         modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
                     )

@@ -4,6 +4,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 /** 설정 파일을 읽은 결과. 화면이 사서에게 상태를 그대로 보여줄 수 있도록 이유를 담는다. */
@@ -48,6 +49,34 @@ class MailConfigLoader(private val configFile: File) {
             }
     }
 
+    /**
+     * 발송 시각만 설정 파일에 다시 적는다.
+     *
+     * 사서가 기기 앞에서 바꾸고 싶어 하는 값은 이것 하나뿐이고, 숫자 네 자리라
+     * 한글 입력기 문제도 없다. 나머지(주소·앱 비밀번호)는 여전히 파일로만 받는다.
+     *
+     * 읽은 JSON 에 값만 갈아 끼워 다시 적으므로 우리가 모르는 항목도 그대로 남는다.
+     * 앱 비밀번호가 든 파일이라 통째로 다시 쓰는 일은 피하고 싶지만, 설정이 한 파일에
+     * 모여 있어야 사서가 헷갈리지 않는다. 임시 파일에 적고 옮겨서, 쓰다 멈춰도
+     * 원본이 반쯤 망가지지 않게 한다.
+     */
+    fun updateSendAt(sendAt: LocalTime): Boolean {
+        if (!configFile.exists()) return false
+        return runCatching {
+            val root = JSONObject(configFile.readText())
+            root.put("sendAt", sendAt.format(SEND_AT_FORMAT))
+
+            val temp = File(configFile.parentFile, "${configFile.name}.tmp")
+            temp.writeText(root.toString(2))
+            if (!temp.renameTo(configFile)) {
+                // 같은 디렉터리인데도 실패하면 그냥 덮어쓴다.
+                configFile.writeText(temp.readText())
+                temp.delete()
+            }
+            true
+        }.getOrDefault(false)
+    }
+
     private fun parse(text: String): MailConfigResult {
         val root = JSONObject(text)
         val smtp = root.optJSONObject("smtp")
@@ -81,7 +110,7 @@ class MailConfigLoader(private val configFile: File) {
             try {
                 LocalTime.parse(raw)
             } catch (e: DateTimeParseException) {
-                return MailConfigResult.Invalid("sendAt 은 \"18:00\" 형식이어야 합니다 (받은 값: $raw)")
+                return MailConfigResult.Invalid("sendAt 은 \"22:00\" 형식이어야 합니다 (받은 값: $raw)")
             }
         } ?: MailSettings.DEFAULT_SEND_AT
 
@@ -97,5 +126,10 @@ class MailConfigLoader(private val configFile: File) {
                 adminPin = root.optString("adminPin").trim(),
             )
         )
+    }
+
+    private companion object {
+        /** 적을 때는 늘 HH:mm. 초가 붙으면 사람이 고치기 번거롭다. */
+        val SEND_AT_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     }
 }

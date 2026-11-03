@@ -81,53 +81,15 @@ fun PinGate(
         }
 
         Spacer(Modifier.height(28.dp))
-        listOf("123", "456", "789").forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                row.forEach { digit -> PinKey(digit.toString()) { pin += digit } }
-            }
-            Spacer(Modifier.height(12.dp))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PinKey(stringResource(R.string.pin_clear), word = true) { pin = "" }
-            PinKey("0") { pin += "0" }
-            PinKey(
-                text = stringResource(R.string.pin_enter),
-                word = true,
-                enabled = pin.isNotEmpty(),
-            ) { onSubmit(pin); pin = "" }
-        }
+        NumberPad(
+            onDigit = { pin += it },
+            onClear = { pin = "" },
+            onConfirm = { onSubmit(pin); pin = "" },
+            confirmEnabled = pin.isNotEmpty(),
+        )
 
         Spacer(Modifier.height(24.dp))
         TextButton(onClick = onCancel) { Text(stringResource(R.string.settings_close)) }
     }
 }
 
-/**
- * 모든 키가 같은 칸을 차지해야 3열 격자로 보인다. [word] 는 "지우기"처럼 글자가 긴 키로,
- * 같은 칸에 넣기 위해 글자만 한 단계 작게 쓰고 좌우 여백을 없앤다.
- */
-@Composable
-private fun PinKey(
-    text: String,
-    word: Boolean = false,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    OutlinedButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.size(width = 96.dp, height = 72.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-    ) {
-        Text(
-            text = text,
-            style = if (word) {
-                MaterialTheme.typography.titleMedium
-            } else {
-                MaterialTheme.typography.titleLarge
-            },
-            maxLines = 1,
-            textAlign = TextAlign.Center,
-        )
-    }
-}

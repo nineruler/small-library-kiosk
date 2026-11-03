@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 data class SettingsUiState(
     val config: MailConfigResult = MailConfigResult.Missing(""),
@@ -52,6 +54,8 @@ sealed interface SettingsMessage {
     data class SendFailed(val reason: String) : SettingsMessage
     data object Deleted : SettingsMessage
     data object DeleteFailed : SettingsMessage
+    data class SendAtChanged(val sendAt: String) : SettingsMessage
+    data object SendAtFailed : SettingsMessage
 }
 
 /**
@@ -146,6 +150,26 @@ class SettingsViewModel(
         }
     }
 
+    /**
+     * 발송 시각을 설정 파일에 적고 다시 읽는다.
+     *
+     * 사서가 기기 앞에서 바꾸는 유일한 설정이다. 작업은 15분마다 깨어나 파일을 다시 읽으므로
+     * 따로 예약을 손댈 필요가 없다.
+     */
+    fun setSendAt(sendAt: LocalTime) {
+        val ok = loader.updateSendAt(sendAt)
+        _state.update {
+            it.copy(
+                message = if (ok) {
+                    SettingsMessage.SendAtChanged(sendAt.format(SEND_AT_FORMAT))
+                } else {
+                    SettingsMessage.SendAtFailed
+                },
+            )
+        }
+        if (ok) refresh()
+    }
+
     fun consumeMessage() = _state.update { it.copy(message = null) }
 
     /** 설정이 맞는지 사서가 바로 확인할 수 있도록 밀린 기록을 지금 보낸다. */
@@ -188,5 +212,9 @@ class SettingsViewModel(
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
             SettingsViewModel(loader, recordStore, sender, catalog, directory) as T
+    }
+
+    private companion object {
+        val SEND_AT_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     }
 }

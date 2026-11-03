@@ -77,6 +77,12 @@
     <string name="settings_howto">아래 위치에 kiosk-mail.json 을 넣어 주세요. adb push 로 넣을 수 있습니다.</string>
     <string name="settings_recipients">받는 사람</string>
     <string name="settings_send_at">발송 시각</string>
+    <string name="send_at_title">발송 시각 바꾸기</string>
+    <string name="send_at_hint">네 자리로 입력해 주세요. 예) 2200 은 밤 10시</string>
+    <string name="send_at_cancel">그대로 두기</string>
+    <string name="send_at_changed">발송 시각을 %1$s 로 바꿨습니다</string>
+    <string name="send_at_failed">발송 시각을 바꾸지 못했습니다. 설정 파일을 확인해 주세요.</string>
+    <string name="send_at_edit">바꾸기</string>
     <string name="settings_pending">보내지 않은 기록 %1$d일치</string>
     <string name="settings_pending_none">보내지 않은 기록이 없습니다</string>
     <string name="settings_send_now">지금 보내기</string>

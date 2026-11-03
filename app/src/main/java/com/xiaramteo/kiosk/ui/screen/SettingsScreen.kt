@@ -39,6 +39,7 @@ import com.xiaramteo.kiosk.data.local.ScanRecord
 import com.xiaramteo.kiosk.settings.RecordView
 import com.xiaramteo.kiosk.settings.MailConfigResult
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.xiaramteo.kiosk.settings.SettingsUiState
 
@@ -56,6 +57,7 @@ fun SettingsScreen(
     onSendNow: () -> Unit,
     onSelectDate: (LocalDate) -> Unit,
     onDeleteRecord: (Int) -> Unit,
+    onChangeSendAt: (LocalTime) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -78,7 +80,7 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(16.dp))
-        ConfigCard(state.config)
+        ConfigCard(state.config, onChangeSendAt)
 
         Spacer(Modifier.height(12.dp))
         Text(
@@ -365,9 +367,10 @@ private fun DeleteConfirmDialog(
 private val MEMBER_COLUMN = 96.dp
 
 private val TIME_ONLY: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val SEND_AT_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 @Composable
-private fun ConfigCard(config: MailConfigResult) {
+private fun ConfigCard(config: MailConfigResult, onChangeSendAt: (LocalTime) -> Unit) {
     val ok = config is MailConfigResult.Loaded
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -395,10 +398,10 @@ private fun ConfigCard(config: MailConfigResult) {
                             config.settings.recipients.joinToString("\n"),
                             Modifier.weight(1.2f),
                         )
-                        Field(
-                            stringResource(R.string.settings_send_at),
-                            config.settings.sendAt.toString(),
-                            Modifier.weight(0.6f),
+                        SendAtField(
+                            sendAt = config.settings.sendAt,
+                            onChange = onChangeSendAt,
+                            modifier = Modifier.weight(0.6f),
                         )
                     }
                     if (!config.settings.enabled) {
@@ -433,6 +436,45 @@ private fun ConfigCard(config: MailConfigResult) {
                     Spacer(Modifier.height(12.dp))
                     Text(config.reason, style = MaterialTheme.typography.bodyLarge)
                 }
+            }
+        }
+    }
+}
+
+/** 설정에서 유일하게 화면으로 고칠 수 있는 항목이라, 값 옆에 바꾸기를 붙여 둔다. */
+@Composable
+private fun SendAtField(
+    sendAt: LocalTime,
+    onChange: (LocalTime) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var editing by remember { mutableStateOf(false) }
+
+    if (editing) {
+        SendAtDialog(
+            current = sendAt,
+            onConfirm = { editing = false; onChange(it) },
+            onDismiss = { editing = false },
+        )
+    }
+
+    Column(modifier) {
+        Text(
+            stringResource(R.string.settings_send_at),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                sendAt.format(SEND_AT_FORMAT),
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.Unspecified,
+            )
+            TextButton(onClick = { editing = true }) {
+                Text(
+                    stringResource(R.string.send_at_edit),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
     }
