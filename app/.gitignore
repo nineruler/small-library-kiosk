@@ -1,3 +1,4 @@
 /build
-/src/main/assets/datas/catalog.xlsx
-/src/main/assets/datas/members.csv
+# 실제 장서·회원 정보가 들어오는 자리라 통째로 저장소에서 뺀다.
+# 파일명을 하나씩 적으면 catalog_261103.xlsx 처럼 날짜가 붙어 올 때 그대로 새어 나간다.
+/src/main/assets/datas/
