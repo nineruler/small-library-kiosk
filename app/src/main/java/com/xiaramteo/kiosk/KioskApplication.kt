@@ -11,7 +11,6 @@ import com.xiaramteo.kiosk.data.local.ScanRecordStore
 import com.xiaramteo.kiosk.report.DailyReportSender
 import com.xiaramteo.kiosk.report.DailyReportWorker
 import com.xiaramteo.kiosk.settings.MailConfigLoader
-import com.xiaramteo.kiosk.settings.MailConfigResult
 import java.io.File
 
 /**
@@ -63,8 +62,7 @@ class KioskApplication : Application() {
         }
 
         // 기기를 재부팅해도 예약이 살아 있도록 실행할 때마다 다시 걸어 둔다.
-        // 설정 파일이 아직 없으면 기본 시각으로 걸어 두고, 작업이 돌 때 다시 읽는다.
-        val settings = (mailConfigLoader.load() as? MailConfigResult.Loaded)?.settings
-        DailyReportWorker.schedule(this, settings ?: com.xiaramteo.kiosk.settings.MailSettings())
+        // 발송 시각은 작업이 돌 때마다 설정 파일에서 다시 읽으므로 여기서는 알 필요가 없다.
+        DailyReportWorker.schedule(this)
     }
 }

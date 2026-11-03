@@ -16,7 +16,15 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-/** 설정된 시각에 하루치 기록을 메일로 보내는 작업. */
+/**
+ * 하루치 기록을 메일로 보내는 작업.
+ *
+ * 15분마다 깨어나 "지금 보낼 때가 되었는지"를 스스로 판단한다. WorkManager 의 주기 작업에
+ * 시각을 맡기지 않는 이유가 있다 — 주기만 주고 flex 를 주지 않으면 창(window)이 주기 전체가
+ * 되어, 하루 주기로 걸면 24시간 중 아무 때나 돌 수 있다. 실제로 18시로 걸어 둔 메일이
+ * 다음 날 00:42 에 도착했다. 그래서 시각 판단은 [sendableUpTo] 가 하고, WorkManager 에는
+ * "자주 깨워 달라"고만 맡긴다.
+ */
 class DailyReportWorker(
     context: Context,
     params: WorkerParameters,
@@ -37,7 +45,8 @@ class DailyReportWorker(
             }
         }
 
-        return when (val outcome = app.reportSender.sendPending(settings, LocalDate.now())) {
+        val upTo = sendableUpTo(settings, LocalDateTime.now())
+        return when (val outcome = app.reportSender.sendPending(settings, upTo)) {
             is SendOutcome.Sent -> {
                 Log.i(TAG, "발송 완료: ${outcome.dates.joinToString()}")
                 Result.success()
@@ -59,16 +68,17 @@ class DailyReportWorker(
         private const val TAG = "DailyReport"
         private const val WORK_NAME = "daily-report-mail"
 
+        /** WorkManager 가 창 안 아무 때나 돌려도 되도록, 자주 깨우기만 한다. */
+        private val CHECK_EVERY: Duration = Duration.ofMinutes(15)
+
         /**
-         * 매일 [MailSettings.sendAt] 에 돌도록 예약한다.
+         * 보낼 때가 되었는지 주기적으로 확인하도록 예약한다.
          *
-         * WorkManager 의 주기 작업은 정확한 시각을 보장하지 않고 창(window) 안에서 돈다.
-         * 하루 한 번 보내는 보고라 몇 분 늦는 것은 문제가 되지 않고, 대신 기기가 자고 있어도
-         * 깨어난 뒤 반드시 실행된다는 점이 중요하다.
+         * 발송 시각은 설정 파일에 있고 작업이 돌 때마다 다시 읽으므로, 예약 자체는
+         * 시각을 모른다. 설정을 바꿔도 다시 예약할 필요가 없다.
          */
-        fun schedule(context: Context, settings: MailSettings) {
-            val request = PeriodicWorkRequestBuilder<DailyReportWorker>(Duration.ofDays(1))
-                .setInitialDelay(initialDelay(settings))
+        fun schedule(context: Context) {
+            val request = PeriodicWorkRequestBuilder<DailyReportWorker>(CHECK_EVERY)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -78,20 +88,25 @@ class DailyReportWorker(
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                // 발송 시각이 바뀌면 새 일정으로 갈아끼워야 한다.
                 ExistingPeriodicWorkPolicy.UPDATE,
                 request,
             )
         }
 
-        /** 지금부터 다음 발송 시각까지 남은 시간. */
-        fun initialDelay(
+        /**
+         * 지금 보내도 되는 마지막 날짜.
+         *
+         * 오늘 치는 [MailSettings.sendAt] 이 지나야 보낸다. 그 전에 보내면 아직 더 빌려 갈
+         * 사람이 남은 하루를 반쪽만 보내게 된다. 지난 날짜는 시각과 상관없이 보낸다 —
+         * 기기가 꺼져 있어 거른 날이 있으면 다음에 깨어났을 때 바로 나가야 한다.
+         */
+        fun sendableUpTo(
             settings: MailSettings,
             now: LocalDateTime = LocalDateTime.now(),
-        ): Duration {
-            var next = now.toLocalDate().atTime(settings.sendAt)
-            if (!next.isAfter(now)) next = next.plusDays(1)
-            return Duration.between(now, next)
+        ): LocalDate = if (now.toLocalTime() < settings.sendAt) {
+            now.toLocalDate().minusDays(1)
+        } else {
+            now.toLocalDate()
         }
 
         fun cancel(context: Context) {
