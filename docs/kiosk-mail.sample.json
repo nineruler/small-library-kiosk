@@ -11,5 +11,8 @@
     "받는사람2@gmail.com"
   ],
   "sendAt": "22:00",
-  "adminPin": "4자리 이상 숫자 (비워 두면 묻지 않는다)"
+  "adminPin": "4자리 이상 숫자 (비워 두면 묻지 않는다)",
+  "imapHost": "imap.gmail.com",
+  "imapPort": 993,
+  "updateToken": "목록 교체 메일 제목에 적을 암호 (비워 두면 받지 않는다)"
 }

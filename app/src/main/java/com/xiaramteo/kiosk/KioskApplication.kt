@@ -8,9 +8,12 @@ import com.xiaramteo.kiosk.data.local.BundledData
 import com.xiaramteo.kiosk.data.local.CatalogStore
 import com.xiaramteo.kiosk.data.local.MemberDirectoryStore
 import com.xiaramteo.kiosk.data.local.ScanRecordStore
+import com.xiaramteo.kiosk.report.DailyReportMailer
 import com.xiaramteo.kiosk.report.DailyReportSender
 import com.xiaramteo.kiosk.report.DailyReportWorker
 import com.xiaramteo.kiosk.settings.MailConfigLoader
+import com.xiaramteo.kiosk.update.ListUpdater
+import com.xiaramteo.kiosk.update.MailboxUpdates
 import java.io.File
 
 /**
@@ -53,6 +56,14 @@ class KioskApplication : Application() {
     }
 
     val reportSender: DailyReportSender by lazy { DailyReportSender(scanRecordStore) }
+
+    /**
+     * 사서가 메일로 보낸 목록을 받아 간다. 도서관에 설치해 둔 기기라 목록을 바꾸러
+     * 매번 찾아갈 수 없어서, 이미 쓰는 메일 계정의 받은편지함을 통로로 쓴다.
+     */
+    val mailboxUpdates: MailboxUpdates by lazy {
+        MailboxUpdates(ListUpdater(getExternalFilesDir(null)!!), DailyReportMailer())
+    }
 
     override fun onCreate() {
         super.onCreate()

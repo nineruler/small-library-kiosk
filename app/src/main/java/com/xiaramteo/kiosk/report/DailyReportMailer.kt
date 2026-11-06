@@ -65,6 +65,24 @@ open class DailyReportMailer {
         Transport.send(message)
     }
 
+    /** 짧은 알림 한 통. 목록 교체 결과를 보낸 사람에게 되돌려 줄 때 쓴다. */
+    open suspend fun sendNotice(
+        settings: MailSettings,
+        to: String,
+        subject: String,
+        body: String,
+    ): Unit = withContext(Dispatchers.IO) {
+        val session = Session.getInstance(smtpProperties(settings), authenticator(settings))
+        val message = MimeMessage(session).apply {
+            setFrom(InternetAddress(settings.username))
+            setRecipients(Message.RecipientType.TO, arrayOf<javax.mail.Address>(InternetAddress(to)))
+            this.subject = subject
+            sentDate = java.util.Date()
+            setText(body, "UTF-8")
+        }
+        Transport.send(message)
+    }
+
     private fun smtpProperties(settings: MailSettings) = Properties().apply {
         put("mail.smtp.auth", "true")
         put("mail.smtp.host", settings.host)

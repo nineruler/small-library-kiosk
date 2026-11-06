@@ -45,6 +45,12 @@ class DailyReportWorker(
             }
         }
 
+        // 목록 교체 메일이 와 있으면 먼저 받아 간다. 여기서 실패해도 기록 발송은 따로 간다 —
+        // 둘은 서로 모르는 일이고, 메일함을 못 읽었다고 그날 기록이 밀리면 안 된다.
+        runCatching { app.mailboxUpdates.check(settings) }
+            .onSuccess { outcomes -> outcomes.forEach { Log.i(TAG, "목록 메일: ${it.line}") } }
+            .onFailure { Log.w(TAG, "목록 메일을 확인하지 못했습니다", it) }
+
         val upTo = sendableUpTo(settings, LocalDateTime.now())
         return when (val outcome = app.reportSender.sendPending(settings, upTo)) {
             is SendOutcome.Sent -> {

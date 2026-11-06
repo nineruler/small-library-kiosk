@@ -124,6 +124,10 @@ class MailConfigLoader(private val configFile: File) {
                 sendAt = sendAt,
                 enabled = root.optBoolean("enabled", true),
                 adminPin = root.optString("adminPin").trim(),
+                imapHost = root.optString("imapHost").trim()
+                    .ifBlank { MailSettings.DEFAULT_IMAP_HOST },
+                imapPort = root.optInt("imapPort", MailSettings.DEFAULT_IMAP_PORT),
+                updateToken = root.optString("updateToken").trim(),
             )
         )
     }
