@@ -62,7 +62,12 @@ class KioskApplication : Application() {
      * 매번 찾아갈 수 없어서, 이미 쓰는 메일 계정의 받은편지함을 통로로 쓴다.
      */
     val mailboxUpdates: MailboxUpdates by lazy {
-        MailboxUpdates(ListUpdater(getExternalFilesDir(null)!!), DailyReportMailer())
+        MailboxUpdates(
+            updater = ListUpdater(getExternalFilesDir(null)!!),
+            mailer = DailyReportMailer(),
+            // 확인 시각은 앱 전용 내부 저장소에 둔다. 사서가 볼 일도 지울 일도 없는 값이다.
+            lastCheckedAt = File(filesDir, "mailbox-checked-at"),
+        )
     }
 
     override fun onCreate() {

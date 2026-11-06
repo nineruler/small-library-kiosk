@@ -5,6 +5,10 @@ import com.xiaramteo.kiosk.report.DailyReportMailer
 import com.xiaramteo.kiosk.settings.MailSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import java.util.Properties
 import javax.mail.Flags
 import javax.mail.Folder
@@ -28,11 +32,25 @@ import javax.mail.search.FlagTerm
 class MailboxUpdates(
     private val updater: ListUpdater,
     private val mailer: DailyReportMailer,
+    /** 마지막으로 메일함을 본 시각을 적어 두는 파일. 재부팅해도 간격을 지키기 위한 것이다. */
+    private val lastCheckedAt: File,
+    private val interval: Duration = DEFAULT_INTERVAL,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
 
-    /** 받은편지함을 한 번 훑는다. 처리한 메일마다 결과를 돌려주고 보낸 사람에게 회신한다. */
+    /**
+     * 받은편지함을 한 번 훑는다. 처리한 메일마다 결과를 돌려주고 보낸 사람에게 회신한다.
+     *
+     * 이 함수를 부르는 작업은 15분마다 깨어나지만(발송 시각을 놓치지 않으려고), 메일함은
+     * 그렇게 자주 볼 필요가 없다. [interval] 이 지나지 않았으면 접속조차 하지 않는다.
+     */
     suspend fun check(settings: MailSettings): List<UpdateOutcome> = withContext(Dispatchers.IO) {
         if (!settings.canReceiveUpdates) return@withContext emptyList()
+
+        val now = clock.instant()
+        if (!isDue(now, readLastChecked(), interval)) return@withContext emptyList()
+        // 실패해도 시각을 적는다. 계정이 잘못돼 있으면 15분마다 로그인을 두드리게 된다.
+        writeLastChecked(now)
 
         val session = Session.getInstance(imapProperties(settings))
         val store = session.getStore("imaps")
@@ -113,6 +131,17 @@ class MailboxUpdates(
     private fun subjectMatches(message: Message, token: String): Boolean =
         subjectMatches(runCatching { message.subject }.getOrNull(), token)
 
+    private fun readLastChecked(): Instant? = runCatching {
+        Instant.ofEpochMilli(lastCheckedAt.readText().trim().toLong())
+    }.getOrNull()
+
+    private fun writeLastChecked(now: Instant) {
+        runCatching {
+            lastCheckedAt.parentFile?.mkdirs()
+            lastCheckedAt.writeText(now.toEpochMilli().toString())
+        }.onFailure { Log.w(TAG, "마지막 확인 시각을 적지 못했습니다", it) }
+    }
+
     private fun imapProperties(settings: MailSettings) = Properties().apply {
         put("mail.store.protocol", "imaps")
         put("mail.imaps.host", settings.imapHost)
@@ -125,6 +154,21 @@ class MailboxUpdates(
     companion object {
         private const val TAG = "MailboxUpdates"
         private const val TIMEOUT_MILLIS = "20000"
+
+        /** 목록은 가끔 바뀐다. 한 시간에 한 번이면 충분하고, 메일 서버에도 부담이 없다. */
+        val DEFAULT_INTERVAL: Duration = Duration.ofHours(1)
+
+        /**
+         * 메일함을 볼 때가 되었는지.
+         *
+         * 기기 시간이 뒤로 돌아가면(시간대 변경, 수동 조정) 간격을 영영 못 채울 수 있으므로
+         * 그때는 바로 볼 때가 된 것으로 친다.
+         */
+        fun isDue(now: Instant, lastChecked: Instant?, interval: Duration): Boolean {
+            if (lastChecked == null) return true
+            if (lastChecked.isAfter(now)) return true
+            return Duration.between(lastChecked, now) >= interval
+        }
 
         /** 제목에 적는 머리말. 사람이 외우기 쉽고 다른 메일과 섞이지 않을 말이어야 한다. */
         const val KEYWORD = "KIOSK-UPDATE"

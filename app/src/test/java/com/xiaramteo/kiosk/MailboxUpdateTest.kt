@@ -13,6 +13,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.time.Duration
+import java.time.Instant
 
 /**
  * 도서관에 설치해 둔 기기라 잘못 바꾸면 고치러 갈 수 없다. 두 가지가 반드시 지켜져야 한다 —
@@ -49,6 +51,33 @@ class MailboxUpdateTest {
         // 암호 없이 받아 가면 주소만 아는 누구나 목록을 갈아 끼울 수 있다.
         assertFalse(MailboxUpdates.subjectMatches("KIOSK-UPDATE", ""))
         assertFalse(MailboxUpdates.subjectMatches("KIOSK-UPDATE ", "   "))
+    }
+
+    // --- 얼마나 자주 보는가 ---
+
+    @Test
+    fun `한 시간이 지나야 메일함을 다시 본다`() {
+        val now = Instant.parse("2026-11-06T10:00:00Z")
+        val hour = Duration.ofHours(1)
+
+        // 작업은 15분마다 깨어나지만 메일함은 그때마다 열지 않는다.
+        assertFalse(MailboxUpdates.isDue(now, now.minus(Duration.ofMinutes(15)), hour))
+        assertFalse(MailboxUpdates.isDue(now, now.minus(Duration.ofMinutes(59)), hour))
+        assertTrue(MailboxUpdates.isDue(now, now.minus(hour), hour))
+        assertTrue(MailboxUpdates.isDue(now, now.minus(Duration.ofHours(3)), hour))
+    }
+
+    @Test
+    fun `처음에는 바로 본다`() {
+        val now = Instant.parse("2026-11-06T10:00:00Z")
+        assertTrue(MailboxUpdates.isDue(now, null, Duration.ofHours(1)))
+    }
+
+    @Test
+    fun `기기 시간이 뒤로 가도 멈추지 않는다`() {
+        // 시간대를 바꾸거나 손으로 맞추면 적어 둔 시각이 미래가 된다. 영영 안 보면 곤란하다.
+        val now = Instant.parse("2026-11-06T10:00:00Z")
+        assertTrue(MailboxUpdates.isDue(now, now.plus(Duration.ofDays(1)), Duration.ofHours(1)))
     }
 
     // --- 어떤 첨부를 받는가 ---
